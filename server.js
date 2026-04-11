@@ -108,7 +108,7 @@ app.post("/validate", (req, res) => {
     }
 
     // ── Verifica expiração
-    if (now > entry.expiresAt) {
+    if (!entry.expiresAt || now > entry.expiresAt) {
         console.log(`[EXPIRED] Key ${key} expirada.`);
         return res.json({ valid: false, message: "Key expirada!" });
     }
