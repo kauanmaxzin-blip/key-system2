@@ -1,0 +1,12 @@
+{
+  "name": "kauan-xit-key-server",
+  "version": "1.0.0",
+  "description": "Servidor de keys online para Kauan Xit",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
