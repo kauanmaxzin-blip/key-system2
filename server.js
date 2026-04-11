@@ -1,13 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║         KAUAN XIT - SERVIDOR DE KEYS ONLINE                  ║
-// ║         Node.js + Express  |  Deploy: Railway / Render       ║
+// ║   KAUAN XIT · KEY SERVER  v3.0                               ║
+// ║   + Lock por conta (userId)  |  Deploy: Render / Railway     ║
 // ╚══════════════════════════════════════════════════════════════╝
-//
-// COMO USAR:
-//   1. npm install
-//   2. Defina a variável de ambiente ADMIN_PASSWORD (ou troque abaixo)
-//   3. npm start
-//   4. Copie a URL pública e coloque em SERVER_URL nos scripts Lua
 
 const express = require("express");
 const fs      = require("fs");
@@ -16,11 +10,11 @@ const app = express();
 app.use(express.json());
 
 // ── CONFIGURAÇÕES ─────────────────────────────────────────────
-const DB_FILE       = "keys.json";          // banco de dados simples
+const DB_FILE        = "keys.json";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "kauanxit_admin_2026";
-const PORT          = process.env.PORT || 3000;
+const PORT           = process.env.PORT || 3000;
 
-// ── BANCO DE DADOS (arquivo JSON) ─────────────────────────────
+// ── BANCO DE DADOS ────────────────────────────────────────────
 function loadDB() {
     if (!fs.existsSync(DB_FILE)) return {};
     try { return JSON.parse(fs.readFileSync(DB_FILE, "utf8")); }
@@ -30,15 +24,14 @@ function saveDB(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// ── GERADOR DE CÓDIGO  (formato: 7B4-8P9-8HP) ─────────────────
+// ── GERADOR DE CÓDIGO  (ex: 7B4-8P9-8HP) ─────────────────────
 function gerarCodigo() {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0,O,1,I (confusos)
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let cod = "";
-    for (let seg = 0; seg < 3; seg++) {
-        if (seg > 0) cod += "-";
-        for (let c = 0; c < 3; c++) {
+    for (let s = 0; s < 3; s++) {
+        if (s > 0) cod += "-";
+        for (let c = 0; c < 3; c++)
             cod += chars[Math.floor(Math.random() * chars.length)];
-        }
     }
     return cod;
 }
@@ -48,63 +41,68 @@ function gerarCodigo() {
 // ═══════════════════════════════════════════════════════════════
 
 // ── [ADMIN] Gerar nova key ────────────────────────────────────
-//  POST /generate
-//  Body: { "password": "...", "days": 7, "quantity": 1 }
 app.post("/generate", (req, res) => {
     const { password, days = 7, quantity = 1 } = req.body;
 
-    if (password !== ADMIN_PASSWORD) {
+    if (password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha de admin incorreta!" });
-    }
 
-    const qtd = Math.min(Math.max(parseInt(quantity) || 1, 1), 100);
-    const db  = loadDB();
-    const geradas = [];
+    const qtd       = Math.min(Math.max(parseInt(quantity) || 1, 1), 100);
+    const db        = loadDB();
+    const geradas   = [];
     const durationMs = (parseFloat(days) || 7) * 24 * 60 * 60 * 1000;
 
     for (let i = 0; i < qtd; i++) {
-        let codigo;
-        let tentativas = 0;
+        let codigo, tentativas = 0;
         do { codigo = gerarCodigo(); tentativas++; }
-        while (db[codigo] && tentativas < 50); // garante unicidade
+        while (db[codigo] && tentativas < 50);
 
         db[codigo] = {
             createdAt:    Date.now(),
-            durationMs:   durationMs,
+            durationMs,
             days:         parseFloat(days) || 7,
-            activatedAt:  null,   // null = ainda não foi usada
-            expiresAt:    null,   // começa a contar só na 1ª validação
+            activatedAt:  null,
+            expiresAt:    null,
+            lockedUserId: null,   // 🔒 será travado no 1º uso
         };
         geradas.push(codigo);
     }
 
     saveDB(db);
-    console.log(`[GENERATE] ${qtd} key(s) criada(s):`, geradas);
+    console.log(`[GENERATE] ${qtd} key(s):`, geradas);
     res.json({ success: true, keys: geradas });
 });
 
 // ── [SCRIPT] Validar / Ativar key ────────────────────────────
-//  POST /validate
-//  Body: { "key": "7B4-8P9-8HP" }
+//  Body: { "key": "7B4-8P9-8HP", "userId": "123456789" }
 app.post("/validate", (req, res) => {
-    const key = (req.body.key || "").trim().toUpperCase();
-    if (!key) return res.json({ valid: false, message: "Key não enviada!" });
+    const key    = (req.body.key    || "").trim().toUpperCase();
+    const userId = String(req.body.userId || "").trim();
+
+    if (!key)    return res.json({ valid: false, message: "Key não enviada!" });
+    if (!userId) return res.json({ valid: false, message: "UserId não enviado!" });
 
     const db    = loadDB();
     const entry = db[key];
 
-    if (!entry) {
+    if (!entry)
         return res.json({ valid: false, message: "Key falsa ou não gerada pelo servidor!" });
-    }
 
     const now = Date.now();
 
-    // ── Primeira vez sendo usada: ativa e inicia o temporizador
+    // ── 1ª vez: ativa, inicia timer e trava na conta
     if (!entry.activatedAt) {
-        entry.activatedAt = now;
-        entry.expiresAt   = now + entry.durationMs;
+        entry.activatedAt  = now;
+        entry.expiresAt    = now + entry.durationMs;
+        entry.lockedUserId = userId;
         saveDB(db);
-        console.log(`[ACTIVATE] Key ${key} ativada. Expira em ${entry.days} dia(s).`);
+        console.log(`[ACTIVATE] Key ${key} ativada por userId=${userId}. Expira em ${entry.days}d.`);
+    }
+
+    // ── Bloqueia outra conta tentando usar a mesma key
+    if (entry.lockedUserId && entry.lockedUserId !== userId) {
+        console.log(`[BLOCKED] Key ${key} de userId=${entry.lockedUserId} tentada por userId=${userId}`);
+        return res.json({ valid: false, message: "Essa Key já pertence a outra conta!" });
     }
 
     // ── Verifica expiração
@@ -117,47 +115,40 @@ app.post("/validate", (req, res) => {
     const remainingDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
     const remainingHrs  = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-    console.log(`[VALID] Key ${key} validada. Restam ${remainingDays}d ${remainingHrs}h`);
+    console.log(`[VALID] Key ${key} ok | userId=${userId} | Restam ${remainingDays}d ${remainingHrs}h`);
 
     res.json({
-        valid:        true,
-        message:      "Key válida! Bem-vindo(a).",
-        expiresAt:    entry.expiresAt,          // timestamp em ms (dividir por 1000 no Lua)
+        valid: true,
+        message: "Key válida! Bem-vindo(a).",
+        expiresAt: entry.expiresAt,
         remainingDays,
         remainingHrs,
-        firstUse:     (entry.activatedAt === now), // true se acabou de ativar agora
     });
 });
 
 // ── [ADMIN] Listar keys ───────────────────────────────────────
-//  POST /list
-//  Body: { "password": "..." }
 app.post("/list", (req, res) => {
-    if (req.body.password !== ADMIN_PASSWORD) {
+    if (req.body.password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha incorreta!" });
-    }
-    const db = loadDB();
+
+    const db  = loadDB();
     const now = Date.now();
-    const lista = Object.entries(db).map(([codigo, entry]) => ({
-        key:       codigo,
-        status:    !entry.activatedAt ? "aguardando" :
-                   (now > entry.expiresAt ? "expirada" : "ativa"),
-        days:      entry.days,
-        expiresAt: entry.expiresAt
-            ? new Date(entry.expiresAt).toLocaleString("pt-BR")
-            : null,
+    const lista = Object.entries(db).map(([codigo, e]) => ({
+        key:    codigo,
+        status: !e.activatedAt ? "aguardando" : (now > e.expiresAt ? "expirada" : "ativa"),
+        days:   e.days,
+        userId: e.lockedUserId || "-",
+        expiresAt: e.expiresAt ? new Date(e.expiresAt).toLocaleString("pt-BR") : null,
     }));
     res.json({ success: true, total: lista.length, keys: lista });
 });
 
 // ── [ADMIN] Deletar key ───────────────────────────────────────
-//  POST /delete
-//  Body: { "password": "...", "key": "7B4-8P9-8HP" }
 app.post("/delete", (req, res) => {
     const { password, key } = req.body;
-    if (password !== ADMIN_PASSWORD) {
+    if (password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha incorreta!" });
-    }
+
     const db = loadDB();
     const k  = (key || "").trim().toUpperCase();
     if (!db[k]) return res.json({ success: false, error: "Key não encontrada!" });
@@ -167,11 +158,11 @@ app.post("/delete", (req, res) => {
 });
 
 // ── Health check ──────────────────────────────────────────────
-app.get("/", (req, res) => res.send("✅ Kauan Xit Key Server online!"));
+app.get("/", (req, res) => res.send("✅ Kauan Xit Key Server v3.0 online!"));
 
 // ── START ─────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`\n🔑 Kauan Xit Key Server rodando na porta ${PORT}`);
+    console.log(`\n🔑 Kauan Xit Key Server v3.0 rodando na porta ${PORT}`);
     console.log(`   Admin Password: ${ADMIN_PASSWORD}`);
     console.log(`   Banco de dados: ${DB_FILE}\n`);
 });
