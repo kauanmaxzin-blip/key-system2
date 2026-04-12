@@ -5,6 +5,8 @@
 
 const express = require("express");
 const https   = require("https");
+const fs      = require("fs");
+const path    = require("path");
 const app     = express();
 app.use(express.json());
 
@@ -201,7 +203,17 @@ app.post("/delete", async (req, res) => {
     res.json({ success: true, message: `Key ${k} deletada.` });
 });
 
-app.get("/", (req, res) => res.send("Kauan Xit Key Server v5.0 online!"));
+// ── Painel Admin Web (PWA)
+app.get("/admin", (req, res) => {
+    const htmlPath = path.join(__dirname, "admin-app.html");
+    if (fs.existsSync(htmlPath)) {
+        res.sendFile(htmlPath);
+    } else {
+        res.send("admin-app.html nao encontrado na pasta do servidor.");
+    }
+});
+
+app.get("/", (req, res) => res.send("Kauan Xit Key Server v5.0 online! Acesse /admin para o painel."));
 
 app.listen(PORT, () => {
     console.log(`\nKauan Xit Key Server v5.0 rodando na porta ${PORT}`);
