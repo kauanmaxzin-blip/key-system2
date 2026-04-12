@@ -533,9 +533,6 @@
       <p>// KEY ADMIN PANEL</p>
     </div>
     <div class="input-group">
-      <input type="password" id="login-url" placeholder="URL do servidor" autocomplete="off">
-    </div>
-    <div class="input-group">
       <input type="password" id="login-pass" placeholder="Senha admin" autocomplete="off">
     </div>
     <button class="btn-login" onclick="doLogin()">ENTRAR</button>
@@ -639,53 +636,48 @@ let selectedDays = 7;
 
 // ── LOGIN ─────────────────────────────────────────────────────
 async function doLogin() {
-  const url  = document.getElementById("login-url").value.trim().replace(/\/$/, "");
   const pass = document.getElementById("login-pass").value.trim();
   const err  = document.getElementById("login-error");
 
-  if (!url || !pass) { err.textContent = "Preencha todos os campos!"; return; }
+  if (!pass) { err.textContent = "Digite a senha!"; return; }
 
   err.textContent = "Verificando...";
 
+  // Usa a URL do proprio servidor automaticamente
+  SERVER_URL = window.location.origin;
+  
   try {
-    const r = await fetch(url + "/list", {
+    const r = await fetch(SERVER_URL + "/list", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({password: pass})
     });
     const data = await r.json();
     if (data.success !== undefined) {
-      SERVER_URL = url;
       ADMIN_PASS = pass;
-      localStorage.setItem("kx_url", url);
       localStorage.setItem("kx_pass", pass);
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("app").style.display = "block";
       err.textContent = "";
     } else {
-      err.textContent = data.error || "Senha incorreta!";
+      err.textContent = "❌ Senha incorreta!";
     }
   } catch(e) {
-    err.textContent = "Erro: verifique a URL do servidor.";
+    err.textContent = "❌ Erro de conexão com o servidor.";
   }
 }
 
 function logout() {
-  localStorage.removeItem("kx_url");
   localStorage.removeItem("kx_pass");
   location.reload();
 }
 
 // Auto-login se salvou credenciais
 window.onload = () => {
-  const url  = localStorage.getItem("kx_url");
   const pass = localStorage.getItem("kx_pass");
-  if (url && pass) {
-    document.getElementById("login-url").value  = url;
+  if (pass) {
     document.getElementById("login-pass").value = pass;
   }
-
-  // Enter no login
   document.getElementById("login-pass").addEventListener("keydown", e => {
     if(e.key === "Enter") doLogin();
   });
