@@ -178,22 +178,20 @@
                         <i class="fa-solid fa-sliders text-kxAccent1"></i> Parâmetros
                     </h2>
                     
-                    <div class="space-y-5 flex-1">
+                    <div class="space-y-6 flex-1">
+                        <!-- BARRA DE SELEÇÃO DE DIAS EM BOTÕES -->
                         <div>
-                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Tempo de Validade</label>
-                            <div class="relative">
-                                <select id="gen-days" class="input-kx w-full rounded-xl py-3 pl-4 pr-10 text-white text-sm appearance-none cursor-pointer">
-                                    <option value="1">1 Dia (Trial)</option>
-                                    <option value="3">3 Dias</option>
-                                    <option value="7" selected>7 Dias (Semanal)</option>
-                                    <option value="15">15 Dias</option>
-                                    <option value="30">30 Dias (Mensal)</option>
-                                    <option value="999">Vitalício (Permanente)</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-zinc-400">
-                                    <i class="fa-solid fa-chevron-down text-xs"></i>
-                                </div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Tempo de Validade</label>
+                            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                                <button type="button" onclick="selectDay(1)" id="btn-day-1" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">1 Dia</button>
+                                <button type="button" onclick="selectDay(3)" id="btn-day-3" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">3 Dias</button>
+                                <button type="button" onclick="selectDay(7)" id="btn-day-7" class="day-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">7 Dias</button>
+                                <button type="button" onclick="selectDay(15)" id="btn-day-15" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">15 Dias</button>
+                                <button type="button" onclick="selectDay(30)" id="btn-day-30" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">30 Dias</button>
+                                <button type="button" onclick="selectDay(999)" id="btn-day-999" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Vitalício</button>
                             </div>
+                            <!-- Input invisível para guardar o valor dos dias pro gerador -->
+                            <input type="hidden" id="gen-days" value="7">
                         </div>
 
                         <div>
@@ -271,6 +269,21 @@
 
     <script>
         let adminPass = "";
+
+        // --- FUNÇÃO DA NOVA BARRA DE DIAS ---
+        function selectDay(days) {
+            document.getElementById('gen-days').value = days;
+            
+            const buttons = document.querySelectorAll('.day-btn');
+            buttons.forEach(btn => {
+                btn.className = "day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all";
+            });
+            
+            const activeBtn = document.getElementById(`btn-day-${days}`);
+            if (activeBtn) {
+                activeBtn.className = "day-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all";
+            }
+        }
 
         // --- SISTEMA DE NOTIFICAÇÕES TOAST ---
         function showToast(msg, type = 'success') {
