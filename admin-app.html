@@ -108,7 +108,6 @@
     <!-- ECRÃ DE LOGIN -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center z-40 bg-kxDark/90 backdrop-blur-sm">
         <div class="glass-card p-10 rounded-2xl w-full max-w-[400px] m-4 relative overflow-hidden">
-            <!-- Glow effect no card -->
             <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-kxAccent1 to-transparent opacity-50"></div>
             
             <div class="text-center mb-8">
@@ -157,21 +156,24 @@
         </header>
 
         <!-- Navegação (Tabs) -->
-        <div class="flex border-b border-kxBorder mb-8 gap-6">
-            <button onclick="switchTab('gerar')" id="tab-gerar" class="tab-btn active pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200">
-                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Gerador de Keys
+        <div class="flex border-b border-kxBorder mb-8 gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1">
+            <button onclick="switchTab('gerar')" id="tab-gerar" class="tab-btn active pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-all">
+                <i class="fa-solid fa-bolt mr-2"></i> Rápido
                 <div class="tab-indicator"></div>
             </button>
-            <button onclick="switchTab('gerir')" id="tab-gerir" class="tab-btn pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200">
+            <button onclick="switchTab('custom')" id="tab-custom" class="tab-btn pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-all">
+                <i class="fa-solid fa-stopwatch mr-2"></i> Personalizada
+                <div class="tab-indicator"></div>
+            </button>
+            <button onclick="switchTab('gerir')" id="tab-gerir" class="tab-btn pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-all">
                 <i class="fa-solid fa-database mr-2"></i> Base de Dados
                 <div class="tab-indicator"></div>
             </button>
         </div>
 
-        <!-- ABA: GERAR KEYS -->
+        <!-- ABA 1: GERADOR RÁPIDO (Botões) -->
         <div id="view-gerar" class="space-y-6 animate-[fadeIn_0.3s_ease]">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
                 <!-- Definicoes -->
                 <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
                     <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
@@ -179,7 +181,6 @@
                     </h2>
                     
                     <div class="space-y-6 flex-1">
-                        <!-- BARRA DE SELEÇÃO DE DIAS EM BOTÕES -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Tempo de Validade</label>
                             <div class="grid grid-cols-3 gap-2 sm:gap-3">
@@ -190,22 +191,21 @@
                                 <button type="button" onclick="selectDay(30)" id="btn-day-30" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">30 Dias</button>
                                 <button type="button" onclick="selectDay(999)" id="btn-day-999" class="day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Vitalício</button>
                             </div>
-                            <!-- Input invisível para guardar o valor dos dias pro gerador -->
                             <input type="hidden" id="gen-days" value="7">
                         </div>
 
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
                             <div class="relative flex items-center">
-                                <button type="button" onclick="changeQty(-1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
+                                <button type="button" onclick="changeQty('gen-qty', -1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
                                 <input type="number" id="gen-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
-                                <button type="button" onclick="changeQty(1)" class="absolute right-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-plus text-xs"></i></button>
+                                <button type="button" onclick="changeQty('gen-qty', 1)" class="absolute right-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-plus text-xs"></i></button>
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-6 mt-2 border-t border-white/5">
-                        <button onclick="generateKeys()" id="btn-generate" class="btn-kx w-full text-white font-bold py-3.5 px-4 rounded-xl flex justify-center items-center gap-2">
+                        <button onclick="generateKeys('rapido')" id="btn-generate-rapido" class="btn-kx w-full text-white font-bold py-3.5 px-4 rounded-xl flex justify-center items-center gap-2">
                             <i class="fa-solid fa-key"></i> Gerar Keys
                         </button>
                     </div>
@@ -217,27 +217,85 @@
                         <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
                             <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
                         </h2>
-                        <button onclick="copyKeys()" class="text-xs bg-white/5 hover:bg-white/10 text-zinc-300 px-3 py-1.5 rounded-lg transition border border-white/5 flex items-center gap-2 font-medium">
+                        <button onclick="copyKeys('gen-output')" class="text-xs bg-white/5 hover:bg-white/10 text-zinc-300 px-3 py-1.5 rounded-lg transition border border-white/5 flex items-center gap-2 font-medium">
                             <i class="fa-regular fa-copy"></i> Copiar Tudo
                         </button>
                     </div>
-                    
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas aparecerão aqui..."></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas rapidamente aparecerão aqui..."></textarea>
                     </div>
                 </div>
-                
             </div>
         </div>
 
-        <!-- ABA: GERIR KEYS -->
+        <!-- ABA 2: KEY PERSONALIZADA (Dias, Horas, Minutos) -->
+        <div id="view-custom" class="hidden space-y-6 animate-[fadeIn_0.3s_ease]">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
+                    <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+                        <i class="fa-solid fa-stopwatch text-kxAccent1"></i> Tempo Personalizado
+                    </h2>
+                    
+                    <div class="space-y-6 flex-1">
+                        <!-- Inputs de Tempo -->
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider text-center">Dias</label>
+                                <input type="number" id="custom-dias" min="0" value="0" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider text-center">Horas</label>
+                                <input type="number" id="custom-horas" min="0" max="23" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold" placeholder="1">
+                            </div>
+                            <div>
+                                <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider text-center">Minutos</label>
+                                <input type="number" id="custom-minutos" min="0" max="59" value="0" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
+                            <div class="relative flex items-center">
+                                <button type="button" onclick="changeQty('custom-qty', -1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
+                                <input type="number" id="custom-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
+                                <button type="button" onclick="changeQty('custom-qty', 1)" class="absolute right-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-plus text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-2 border-t border-white/5">
+                        <button onclick="generateKeys('custom')" id="btn-generate-custom" class="btn-kx w-full text-white font-bold py-3.5 px-4 rounded-xl flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-key"></i> Gerar Key Personalizada
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultado -->
+                <div class="glass-card p-6 rounded-2xl lg:col-span-7 flex flex-col min-h-[300px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
+                            <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
+                        </h2>
+                        <button onclick="copyKeys('custom-output')" class="text-xs bg-white/5 hover:bg-white/10 text-zinc-300 px-3 py-1.5 rounded-lg transition border border-white/5 flex items-center gap-2 font-medium">
+                            <i class="fa-regular fa-copy"></i> Copiar Tudo
+                        </button>
+                    </div>
+                    <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves personalizadas aparecerão aqui..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 3: GERIR KEYS -->
         <div id="view-gerir" class="hidden flex-col flex-1 animate-[fadeIn_0.3s_ease]">
             <div class="flex justify-between items-end mb-6">
                 <div>
                     <h2 class="text-white font-semibold text-lg flex items-center gap-2">
                         <i class="fa-solid fa-server text-kxAccent1"></i> Keys Ativas
                     </h2>
-                    <p class="text-xs text-zinc-500 mt-1">Gere e monitore os acessos dos utilizadores. <span id="key-count" class="text-kxAccent1 font-bold ml-1">0</span> keys totais.</p>
+                    <p class="text-xs text-zinc-500 mt-1">Gere e monitore os acessos. <span id="key-count" class="text-kxAccent1 font-bold ml-1">0</span> keys totais.</p>
                 </div>
                 <button onclick="loadKeys()" id="btn-refresh" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl transition border border-white/5 text-sm font-medium flex items-center gap-2">
                     <i class="fa-solid fa-arrows-rotate"></i> Atualizar
@@ -250,7 +308,7 @@
                     <table class="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                             <tr class="bg-black/40 border-b border-kxBorder text-zinc-400 text-xs uppercase tracking-wider">
-                                <th class="px-6 py-4 font-semibold">Chave de Acesso (Key)</th>
+                                <th class="px-6 py-4 font-semibold">Chave (Key)</th>
                                 <th class="px-6 py-4 font-semibold">Estado</th>
                                 <th class="px-6 py-4 font-semibold">Duração</th>
                                 <th class="px-6 py-4 font-semibold">HWID / User</th>
@@ -258,7 +316,6 @@
                             </tr>
                         </thead>
                         <tbody id="keys-tbody" class="text-sm divide-y divide-kxBorder">
-                            <!-- Inserido via JS -->
                             <tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> A carregar base de dados...</td></tr>
                         </tbody>
                     </table>
@@ -270,22 +327,20 @@
     <script>
         let adminPass = "";
 
-        // --- FUNÇÃO DA NOVA BARRA DE DIAS ---
+        // --- FUNÇÃO DA BARRA DE DIAS RÁPIDA ---
         function selectDay(days) {
             document.getElementById('gen-days').value = days;
-            
             const buttons = document.querySelectorAll('.day-btn');
             buttons.forEach(btn => {
                 btn.className = "day-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all";
             });
-            
             const activeBtn = document.getElementById(`btn-day-${days}`);
             if (activeBtn) {
                 activeBtn.className = "day-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all";
             }
         }
 
-        // --- SISTEMA DE NOTIFICAÇÕES TOAST ---
+        // --- SISTEMA DE TOAST ---
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const toastIcon = document.getElementById('toast-icon');
@@ -305,11 +360,8 @@
                 toastIcon.className = 'fa-solid fa-circle-check';
             }
             
-            // Show
             toast.classList.remove('translate-y-12', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
-            
-            // Hide
             setTimeout(() => { 
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-12', 'opacity-0');
@@ -371,12 +423,15 @@
             showToast("Sessão terminada.", "info");
         }
 
-        // --- TABS ---
+        // --- TABS (AGORA SÃO 3 ABAS) ---
         function switchTab(tab) {
-            document.getElementById('tab-gerar').classList.remove('active');
-            document.getElementById('tab-gerir').classList.remove('active');
-            document.getElementById('view-gerar').classList.add('hidden');
-            document.getElementById('view-gerir').classList.add('hidden');
+            const tabs = ['gerar', 'custom', 'gerir'];
+            
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).classList.remove('active');
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`view-${t}`).classList.remove('flex');
+            });
 
             document.getElementById(`tab-${tab}`).classList.add('active');
             document.getElementById(`view-${tab}`).classList.remove('hidden');
@@ -384,14 +439,12 @@
             if (tab === 'gerir') {
                 document.getElementById(`view-${tab}`).classList.add('flex');
                 loadKeys();
-            } else {
-                document.getElementById('view-gerir').classList.remove('flex');
             }
         }
 
         // --- QTY CONTROLS ---
-        function changeQty(amount) {
-            const input = document.getElementById('gen-qty');
+        function changeQty(inputId, amount) {
+            const input = document.getElementById(inputId);
             let val = parseInt(input.value) || 1;
             val += amount;
             if (val < 1) val = 1;
@@ -399,19 +452,45 @@
             input.value = val;
         }
 
-        // --- GERAR KEYS ---
-        async function generateKeys() {
-            const days = document.getElementById('gen-days').value;
-            const qty = document.getElementById('gen-qty').value;
-            const btn = document.getElementById('btn-generate');
-            const out = document.getElementById('gen-output');
+        // --- GERAR KEYS (Rápido e Personalizado) ---
+        async function generateKeys(type) {
+            let totalDays = 0;
+            let qty = 1;
+            let btnId = '';
+            let outId = '';
 
+            if (type === 'rapido') {
+                totalDays = parseFloat(document.getElementById('gen-days').value) || 7;
+                qty = parseInt(document.getElementById('gen-qty').value) || 1;
+                btnId = 'btn-generate-rapido';
+                outId = 'gen-output';
+            } else if (type === 'custom') {
+                const d = parseInt(document.getElementById('custom-dias').value) || 0;
+                const h = parseInt(document.getElementById('custom-horas').value) || 0;
+                const m = parseInt(document.getElementById('custom-minutos').value) || 0;
+                
+                // Transforma tudo num número só de dias (o servidor vai entender perfeitamente)
+                totalDays = d + (h / 24) + (m / 1440);
+                qty = parseInt(document.getElementById('custom-qty').value) || 1;
+                btnId = 'btn-generate-custom';
+                outId = 'custom-output';
+
+                if (totalDays <= 0) {
+                    showToast("O tempo total deve ser maior que zero!", "error");
+                    return;
+                }
+            }
+
+            const btn = document.getElementById(btnId);
+            const out = document.getElementById(outId);
+
+            const textoOriginalBtn = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            const data = await apiRequest('/generate', { password: adminPass, days: days, quantity: qty });
+            const data = await apiRequest('/generate', { password: adminPass, days: totalDays, quantity: qty });
 
-            btn.innerHTML = '<i class="fa-solid fa-key"></i> Gerar Keys';
+            btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
 
             if (data.success) {
@@ -422,8 +501,8 @@
             }
         }
 
-        function copyKeys() {
-            const out = document.getElementById('gen-output');
+        function copyKeys(outId) {
+            const out = document.getElementById(outId);
             if (!out.value) {
                 showToast("Não há keys para copiar.", "info");
                 return;
@@ -433,6 +512,21 @@
             showToast("Keys copiadas para a área de transferência!", "success");
         }
 
+        // --- FORMATAR DIAS (Ex: 1.5 vira "1d 12h") ---
+        function formatFractionalDays(fractionalDays) {
+            if (fractionalDays >= 999) return "Vitalício";
+            const totalMins = Math.round(fractionalDays * 24 * 60);
+            const d = Math.floor(totalMins / 1440);
+            const h = Math.floor((totalMins % 1440) / 60);
+            const m = totalMins % 60;
+            
+            let res = [];
+            if (d > 0) res.push(`${d}d`);
+            if (h > 0) res.push(`${h}h`);
+            if (m > 0 || res.length === 0) res.push(`${m}m`);
+            return res.join(' ');
+        }
+
         // --- GERIR KEYS ---
         async function loadKeys() {
             const tbody = document.getElementById('keys-tbody');
@@ -440,7 +534,7 @@
             const countLbl = document.getElementById('key-count');
 
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Atualizar';
-            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> Sincronizando com Upstash Redis...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> Sincronizando...</td></tr>';
 
             const data = await apiRequest('/list', { password: adminPass });
             btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Atualizar';
@@ -453,20 +547,17 @@
             countLbl.innerText = data.total;
 
             if (data.keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-database text-2xl mb-3 block opacity-50"></i> Banco de dados vazio. Nenhuma key encontrada.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-database text-2xl mb-3 block opacity-50"></i> Banco de dados vazio.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
-            
-            // Ordenar: mais recentes primeiro (assumindo que a API as manda, senão invertemos)
             const sortedKeys = data.keys.reverse();
 
             sortedKeys.forEach(k => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-white/[0.02] transition border-b border-kxBorder last:border-0";
                 
-                // Estilo Dinâmico do Status
                 let statusBadge = '';
                 if(k.status === 'ativa') {
                     statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 text-green-400 rounded-lg text-[11px] font-bold tracking-wide border border-green-500/20"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> ATIVA</span>';
@@ -478,6 +569,9 @@
 
                 const dataExpiracao = k.expiresAt ? k.expiresAt : '<span class="text-zinc-600">Não ativada</span>';
                 const userText = (k.userId && k.userId !== "-") ? k.userId : '<span class="text-zinc-600">Nenhum</span>';
+                
+                // Transforma o número que vem do servidor (ex: 1.5) numa string bonita (ex: "1d 12h")
+                const tempoBonito = formatFractionalDays(k.days);
 
                 tr.innerHTML = `
                     <td class="px-6 py-4 font-mono text-zinc-300 font-medium tracking-wide">
@@ -488,7 +582,7 @@
                     </td>
                     <td class="px-6 py-4">${statusBadge}</td>
                     <td class="px-6 py-4">
-                        <div class="text-zinc-300">${k.days} Dias</div>
+                        <div class="text-zinc-300">${tempoBonito}</div>
                         <div class="text-xs text-zinc-500 mt-0.5">${dataExpiracao}</div>
                     </td>
                     <td class="px-6 py-4 font-mono text-xs text-zinc-400">${userText}</td>
@@ -508,7 +602,7 @@
             const data = await apiRequest('/delete', { password: adminPass, key: keyStr });
             if (data.success) {
                 showToast(`Key ${keyStr} apagada com sucesso.`, "success");
-                loadKeys(); // Recarrega
+                loadKeys();
             } else {
                 showToast(data.error || "Erro ao apagar key.", "error");
             }
