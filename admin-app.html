@@ -1,158 +1,268 @@
+```html
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kauan Xit - Painel Admin</title>
+    <title>Kauan Xit | Premium Admin</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        accent: '#7364ff',
-                        bgDark: '#111113',
-                        cardDark: '#1c1c1e'
+                        kxDark: '#0a0a0c',
+                        kxCard: '#131316',
+                        kxBorder: '#27272a',
+                        kxAccent1: '#7364ff',
+                        kxAccent2: '#9f54ff',
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'accent-grad': 'linear-gradient(135deg, #7364ff 0%, #9f54ff 100%)',
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #111113; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .tab-btn.active { color: #7364ff; border-bottom: 2px solid #7364ff; }
-        .glass { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(10px); }
+        body { 
+            background-color: #0a0a0c; 
+            color: #e4e4e7;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(115, 100, 255, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(159, 84, 255, 0.08), transparent 25%);
+            background-attachment: fixed;
+        }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #111113; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        /* Efeito Glassmorphism */
+        .glass-card {
+            background: rgba(19, 19, 22, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-kx {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #27272a;
+            transition: all 0.3s ease;
+        }
+        .input-kx:focus {
+            border-color: #7364ff;
+            box-shadow: 0 0 0 3px rgba(115, 100, 255, 0.2);
+            outline: none;
+        }
+
+        .btn-kx {
+            background: linear-gradient(135deg, #7364ff, #9f54ff);
+            box-shadow: 0 4px 15px rgba(115, 100, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-kx:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(115, 100, 255, 0.5);
+            filter: brightness(1.1);
+        }
+        .btn-kx:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .btn-kx:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        /* Tabs animadas */
+        .tab-btn { position: relative; transition: color 0.3s ease; }
+        .tab-btn.active { color: white; }
+        .tab-indicator {
+            position: absolute; bottom: -1px; left: 0; height: 2px; width: 100%;
+            background: linear-gradient(90deg, #7364ff, #9f54ff);
+            transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        .tab-btn.active .tab-indicator { transform: scaleX(1); }
+
+        /* Scrollbar fina */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col font-sans selection:bg-kxAccent1 selection:text-white antialiased">
 
-    <!-- Notificações Toast -->
-    <div id="toast" class="fixed top-4 right-4 bg-gray-800 text-white px-6 py-3 rounded shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-50">
-        <span id="toast-msg">Mensagem</span>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none z-50 flex items-center gap-3 backdrop-blur-md border border-white/10">
+        <i id="toast-icon" class="fa-solid fa-circle-info"></i>
+        <span id="toast-msg" class="font-medium text-sm"></span>
     </div>
 
     <!-- ECRÃ DE LOGIN -->
-    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-bgDark z-40">
-        <div class="glass p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-800 m-4">
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center z-40 bg-kxDark/90 backdrop-blur-sm">
+        <div class="glass-card p-10 rounded-2xl w-full max-w-[400px] m-4 relative overflow-hidden">
+            <!-- Glow effect no card -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-kxAccent1 to-transparent opacity-50"></div>
+            
             <div class="text-center mb-8">
-                <i class="fa-solid fa-key text-4xl text-accent mb-4"></i>
-                <h1 class="text-2xl font-bold">Painel Admin</h1>
-                <p class="text-gray-400 text-sm mt-2">Kauan Xit Key Server</p>
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-kxAccent1/20 to-kxAccent2/20 border border-kxAccent1/30 flex items-center justify-center mx-auto mb-5 shadow-[0_0_30px_rgba(115,100,255,0.2)]">
+                    <i class="fa-solid fa-bolt text-2xl text-kxAccent1"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-wide">Kauan Xit</h1>
+                <p class="text-zinc-500 text-sm mt-1">Admin Control Panel</p>
             </div>
             
-            <form id="login-form" onsubmit="event.preventDefault(); doLogin();">
-                <div class="mb-6">
-                    <label class="block text-gray-400 text-sm font-bold mb-2" for="password">Senha do Admin</label>
-                    <input class="shadow appearance-none border border-gray-700 rounded w-full py-3 px-4 bg-gray-900 text-white leading-tight focus:outline-none focus:border-accent" id="password" type="password" placeholder="Introduzir senha..." required>
+            <form id="login-form" onsubmit="event.preventDefault(); doLogin();" class="space-y-5">
+                <div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-lock text-zinc-500"></i>
+                        </div>
+                        <input id="password" type="password" class="input-kx w-full rounded-xl py-3.5 pl-11 pr-4 text-white text-sm placeholder-zinc-600" placeholder="Insira a sua senha..." required>
+                    </div>
                 </div>
-                <button type="submit" id="btn-login" class="w-full bg-accent hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded transition duration-200 flex justify-center items-center">
-                    <span>Entrar no Painel</span>
+                <button type="submit" id="btn-login" class="btn-kx w-full text-white font-bold py-3.5 px-4 rounded-xl flex justify-center items-center gap-2">
+                    <span>Autenticar</span>
+                    <i class="fa-solid fa-arrow-right text-sm"></i>
                 </button>
-                <p id="login-error" class="text-red-500 text-sm text-center mt-4 hidden"></p>
+                <p id="login-error" class="text-red-400 text-xs text-center hidden bg-red-400/10 py-2 rounded-lg border border-red-400/20"></p>
             </form>
         </div>
     </div>
 
-    <!-- APP PRINCIPAL (Oculta por defeito) -->
-    <div id="app" class="hidden flex-1 flex flex-col max-w-4xl w-full mx-auto p-4 sm:p-6">
+    <!-- APP PRINCIPAL -->
+    <div id="app" class="hidden flex-1 flex-col max-w-5xl w-full mx-auto p-4 sm:p-8">
         
         <!-- Header -->
-        <header class="flex justify-between items-center py-4 border-b border-gray-800 mb-6">
-            <div class="flex items-center gap-3">
-                <div class="bg-accent text-white p-2 rounded-lg">
-                    <i class="fa-solid fa-shield-halved"></i>
+        <header class="flex justify-between items-center mb-8 bg-transparent">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-kxAccent1/20 to-kxAccent2/20 border border-kxAccent1/30 flex items-center justify-center shadow-[0_0_20px_rgba(115,100,255,0.15)]">
+                    <i class="fa-solid fa-bolt text-xl text-kxAccent1"></i>
                 </div>
-                <h1 class="text-xl font-bold">Kauan Xit</h1>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Kauan Xit</h1>
+                    <p class="text-xs text-zinc-500">System v5.0 Online</p>
+                </div>
             </div>
-            <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition">
-                <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>Sair
+            <button onclick="logout()" class="flex items-center gap-2 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg transition border border-white/5 text-sm font-medium">
+                <i class="fa-solid fa-power-off"></i> Sair
             </button>
         </header>
 
-        <!-- Tabs -->
-        <div class="flex border-b border-gray-800 mb-6">
-            <button onclick="switchTab('gerar')" id="tab-gerar" class="tab-btn active flex-1 py-3 text-center font-semibold text-gray-400 transition hover:text-white">
-                <i class="fa-solid fa-plus mr-2"></i> Gerar Keys
+        <!-- Navegação (Tabs) -->
+        <div class="flex border-b border-kxBorder mb-8 gap-6">
+            <button onclick="switchTab('gerar')" id="tab-gerar" class="tab-btn active pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200">
+                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Gerador de Keys
+                <div class="tab-indicator"></div>
             </button>
-            <button onclick="switchTab('gerir')" id="tab-gerir" class="tab-btn flex-1 py-3 text-center font-semibold text-gray-400 transition hover:text-white">
-                <i class="fa-solid fa-list mr-2"></i> Gerir Keys
+            <button onclick="switchTab('gerir')" id="tab-gerir" class="tab-btn pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200">
+                <i class="fa-solid fa-database mr-2"></i> Base de Dados
+                <div class="tab-indicator"></div>
             </button>
         </div>
 
         <!-- ABA: GERAR KEYS -->
-        <div id="view-gerar" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Controlos -->
-                <div class="cardDark p-6 rounded-xl border border-gray-800">
-                    <h2 class="text-lg font-bold mb-4 flex items-center"><i class="fa-regular fa-clock text-accent mr-2"></i> Configuração da Key</h2>
+        <div id="view-gerar" class="space-y-6 animate-[fadeIn_0.3s_ease]">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Definicoes -->
+                <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
+                    <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
+                        <i class="fa-solid fa-sliders text-kxAccent1"></i> Parâmetros
+                    </h2>
                     
-                    <div class="mb-4">
-                        <label class="block text-gray-400 text-sm font-bold mb-2">Validade (Dias)</label>
-                        <select id="gen-days" class="w-full bg-gray-900 border border-gray-700 text-white rounded py-2 px-3 focus:outline-none focus:border-accent">
-                            <option value="1">1 Dia</option>
-                            <option value="3">3 Dias</option>
-                            <option value="7" selected>7 Dias</option>
-                            <option value="15">15 Dias</option>
-                            <option value="30">30 Dias</option>
-                            <option value="999">Vitalício (999 dias)</option>
-                        </select>
+                    <div class="space-y-5 flex-1">
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Tempo de Validade</label>
+                            <div class="relative">
+                                <select id="gen-days" class="input-kx w-full rounded-xl py-3 pl-4 pr-10 text-white text-sm appearance-none cursor-pointer">
+                                    <option value="1">1 Dia (Trial)</option>
+                                    <option value="3">3 Dias</option>
+                                    <option value="7" selected>7 Dias (Semanal)</option>
+                                    <option value="15">15 Dias</option>
+                                    <option value="30">30 Dias (Mensal)</option>
+                                    <option value="999">Vitalício (Permanente)</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-zinc-400">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
+                            <div class="relative flex items-center">
+                                <button type="button" onclick="changeQty(-1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
+                                <input type="number" id="gen-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
+                                <button type="button" onclick="changeQty(1)" class="absolute right-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-plus text-xs"></i></button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-6">
-                        <label class="block text-gray-400 text-sm font-bold mb-2">Quantidade a Gerar</label>
-                        <input type="number" id="gen-qty" min="1" max="100" value="1" class="w-full bg-gray-900 border border-gray-700 text-white rounded py-2 px-3 focus:outline-none focus:border-accent">
+                    <div class="pt-6 mt-2 border-t border-white/5">
+                        <button onclick="generateKeys()" id="btn-generate" class="btn-kx w-full text-white font-bold py-3.5 px-4 rounded-xl flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-key"></i> Gerar Keys
+                        </button>
                     </div>
-
-                    <button onclick="generateKeys()" id="btn-generate" class="w-full bg-accent hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded transition duration-200">
-                        <i class="fa-solid fa-key mr-2"></i> Gerar Agora
-                    </button>
                 </div>
 
-                <!-- Resultados -->
-                <div class="cardDark p-6 rounded-xl border border-gray-800 flex flex-col">
+                <!-- Resultado -->
+                <div class="glass-card p-6 rounded-2xl lg:col-span-7 flex flex-col min-h-[300px]">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-bold flex items-center"><i class="fa-solid fa-check text-green-500 mr-2"></i> Keys Geradas</h2>
-                        <button onclick="copyKeys()" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded transition text-gray-300">
+                        <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
+                            <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
+                        </h2>
+                        <button onclick="copyKeys()" class="text-xs bg-white/5 hover:bg-white/10 text-zinc-300 px-3 py-1.5 rounded-lg transition border border-white/5 flex items-center gap-2 font-medium">
                             <i class="fa-regular fa-copy"></i> Copiar Tudo
                         </button>
                     </div>
-                    <textarea id="gen-output" readonly class="flex-1 w-full bg-gray-900 border border-gray-700 text-accent font-mono rounded p-3 focus:outline-none resize-none min-h-[150px]" placeholder="As tuas keys vão aparecer aqui..."></textarea>
+                    
+                    <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas aparecerão aqui..."></textarea>
+                    </div>
                 </div>
+                
             </div>
         </div>
 
         <!-- ABA: GERIR KEYS -->
-        <div id="view-gerir" class="hidden flex-col h-full">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold">Base de Dados <span id="key-count" class="text-gray-500 text-sm font-normal ml-2">(0 keys)</span></h2>
-                <button onclick="loadKeys()" id="btn-refresh" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded transition text-sm">
-                    <i class="fa-solid fa-arrows-rotate mr-2"></i> Atualizar
+        <div id="view-gerir" class="hidden flex-col flex-1 animate-[fadeIn_0.3s_ease]">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-white font-semibold text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-server text-kxAccent1"></i> Keys Ativas
+                    </h2>
+                    <p class="text-xs text-zinc-500 mt-1">Gere e monitore os acessos dos utilizadores. <span id="key-count" class="text-kxAccent1 font-bold ml-1">0</span> keys totais.</p>
+                </div>
+                <button onclick="loadKeys()" id="btn-refresh" class="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl transition border border-white/5 text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-arrows-rotate"></i> Atualizar
                 </button>
             </div>
 
-            <!-- Lista -->
-            <div class="cardDark rounded-xl border border-gray-800 overflow-hidden flex-1">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+            <!-- Tabela -->
+            <div class="glass-card rounded-2xl overflow-hidden flex-1 border border-white/5 shadow-xl flex flex-col">
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
-                            <tr class="bg-gray-900 border-b border-gray-800 text-gray-400 text-sm">
-                                <th class="p-4 font-semibold">Key</th>
-                                <th class="p-4 font-semibold">Status</th>
-                                <th class="p-4 font-semibold">Validade</th>
-                                <th class="p-4 font-semibold">User ID</th>
-                                <th class="p-4 font-semibold text-right">Ação</th>
+                            <tr class="bg-black/40 border-b border-kxBorder text-zinc-400 text-xs uppercase tracking-wider">
+                                <th class="px-6 py-4 font-semibold">Chave de Acesso (Key)</th>
+                                <th class="px-6 py-4 font-semibold">Estado</th>
+                                <th class="px-6 py-4 font-semibold">Duração</th>
+                                <th class="px-6 py-4 font-semibold">HWID / User</th>
+                                <th class="px-6 py-4 font-semibold text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="keys-tbody" class="text-sm divide-y divide-gray-800">
+                        <tbody id="keys-tbody" class="text-sm divide-y divide-kxBorder">
                             <!-- Inserido via JS -->
-                            <tr><td colspan="5" class="p-6 text-center text-gray-500">A carregar dados...</td></tr>
+                            <tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> A carregar base de dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -163,20 +273,40 @@
     <script>
         let adminPass = "";
 
-        // --- SISTEMA DE TOAST (NOTIFICAÇÕES) ---
-        function showToast(msg, isError = false) {
+        // --- SISTEMA DE NOTIFICAÇÕES TOAST ---
+        function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
             const toastMsg = document.getElementById('toast-msg');
+            
             toastMsg.innerText = msg;
-            toast.className = `fixed top-4 right-4 px-6 py-3 rounded shadow-lg transition-opacity duration-300 z-50 ${isError ? 'bg-red-600' : 'bg-green-600'}`;
-            toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full shadow-2xl transition-all duration-300 z-50 flex items-center gap-3 backdrop-blur-md border transform`;
+            
+            if (type === 'error') {
+                toast.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+                toastIcon.className = 'fa-solid fa-circle-exclamation';
+            } else if (type === 'info') {
+                toast.classList.add('bg-blue-500/10', 'border-blue-500/20', 'text-blue-400');
+                toastIcon.className = 'fa-solid fa-circle-info';
+            } else {
+                toast.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
+                toastIcon.className = 'fa-solid fa-circle-check';
+            }
+            
+            // Show
+            toast.classList.remove('translate-y-12', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            // Hide
+            setTimeout(() => { 
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-12', 'opacity-0');
+            }, 3500);
         }
 
         // --- API FETCHER ---
         async function apiRequest(endpoint, body) {
             try {
-                // Como o site está no mesmo servidor, usamos caminhos relativos
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -184,7 +314,7 @@
                 });
                 return await res.json();
             } catch (err) {
-                return { success: false, error: "Erro de conexão com a API." };
+                return { success: false, error: "Erro de conexão com o servidor." };
             }
         }
 
@@ -198,20 +328,25 @@
             btn.disabled = true;
             errTxt.classList.add('hidden');
 
-            // Testa a password fazendo um pedido de listagem
             const data = await apiRequest('/list', { password: passInput });
             
-            btn.innerHTML = 'Entrar no Painel';
+            btn.innerHTML = '<span>Autenticar</span><i class="fa-solid fa-arrow-right text-sm"></i>';
             btn.disabled = false;
 
             if (data && data.success) {
                 adminPass = passInput;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                document.getElementById('app').classList.add('flex');
+                document.getElementById('login-screen').classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    document.getElementById('app').classList.add('flex');
+                    showToast("Login efetuado com sucesso!", "success");
+                }, 300);
             } else {
-                errTxt.innerText = data.error || "Senha incorreta!";
+                errTxt.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${data.error || "Acesso Negado."}`;
                 errTxt.classList.remove('hidden');
+                document.getElementById('password').value = "";
+                document.getElementById('password').focus();
             }
         }
 
@@ -220,7 +355,8 @@
             document.getElementById('password').value = "";
             document.getElementById('app').classList.add('hidden');
             document.getElementById('app').classList.remove('flex');
-            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-screen').classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            showToast("Sessão terminada.", "info");
         }
 
         // --- TABS ---
@@ -241,6 +377,16 @@
             }
         }
 
+        // --- QTY CONTROLS ---
+        function changeQty(amount) {
+            const input = document.getElementById('gen-qty');
+            let val = parseInt(input.value) || 1;
+            val += amount;
+            if (val < 1) val = 1;
+            if (val > 100) val = 100;
+            input.value = val;
+        }
+
         // --- GERAR KEYS ---
         async function generateKeys() {
             const days = document.getElementById('gen-days').value;
@@ -248,28 +394,31 @@
             const btn = document.getElementById('btn-generate');
             const out = document.getElementById('gen-output');
 
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Gerar...';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
             const data = await apiRequest('/generate', { password: adminPass, days: days, quantity: qty });
 
-            btn.innerHTML = '<i class="fa-solid fa-key mr-2"></i> Gerar Agora';
+            btn.innerHTML = '<i class="fa-solid fa-key"></i> Gerar Keys';
             btn.disabled = false;
 
             if (data.success) {
                 out.value = data.keys.join('\n');
-                showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`);
+                showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
-                showToast(data.error || "Erro ao gerar keys.", true);
+                showToast(data.error || "Erro ao gerar keys.", "error");
             }
         }
 
         function copyKeys() {
             const out = document.getElementById('gen-output');
-            if (!out.value) return;
+            if (!out.value) {
+                showToast("Não há keys para copiar.", "info");
+                return;
+            }
             out.select();
             document.execCommand('copy');
-            showToast("Keys copiadas para a área de transferência!");
+            showToast("Keys copiadas para a área de transferência!", "success");
         }
 
         // --- GERIR KEYS ---
@@ -278,46 +427,62 @@
             const btn = document.getElementById('btn-refresh');
             const countLbl = document.getElementById('key-count');
 
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Atualizar';
-            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500">A carregar...</td></tr>';
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Atualizar';
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> Sincronizando com Upstash Redis...</td></tr>';
 
             const data = await apiRequest('/list', { password: adminPass });
-            btn.innerHTML = '<i class="fa-solid fa-arrows-rotate mr-2"></i> Atualizar';
+            btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Atualizar';
 
             if (!data.success) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500">Erro: ${data.error}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-400"><i class="fa-solid fa-triangle-exclamation text-xl block mb-2"></i> Erro: ${data.error}</td></tr>`;
                 return;
             }
 
-            countLbl.innerText = `(${data.total} keys)`;
+            countLbl.innerText = data.total;
 
             if (data.keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500">Nenhuma key encontrada no servidor.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-database text-2xl mb-3 block opacity-50"></i> Banco de dados vazio. Nenhuma key encontrada.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
             
-            // Reverter ordem para mostrar as mais recentes primeiro
+            // Ordenar: mais recentes primeiro (assumindo que a API as manda, senão invertemos)
             const sortedKeys = data.keys.reverse();
 
             sortedKeys.forEach(k => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-800/50 transition border-b border-gray-800 last:border-0";
+                tr.className = "hover:bg-white/[0.02] transition border-b border-kxBorder last:border-0";
                 
+                // Estilo Dinâmico do Status
                 let statusBadge = '';
-                if(k.status === 'ativa') statusBadge = '<span class="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold">ATIVA</span>';
-                else if(k.status === 'expirada') statusBadge = '<span class="px-2 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-bold">EXPIRADA</span>';
-                else statusBadge = '<span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-bold">AGUARDANDO</span>';
+                if(k.status === 'ativa') {
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 text-green-400 rounded-lg text-[11px] font-bold tracking-wide border border-green-500/20"><span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> ATIVA</span>';
+                } else if(k.status === 'expirada') {
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 text-red-400 rounded-lg text-[11px] font-bold tracking-wide border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> EXPIRADA</span>';
+                } else {
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 text-yellow-400 rounded-lg text-[11px] font-bold tracking-wide border border-yellow-500/20"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> AGUARDANDO</span>';
+                }
+
+                const dataExpiracao = k.expiresAt ? k.expiresAt : '<span class="text-zinc-600">Não ativada</span>';
+                const userText = (k.userId && k.userId !== "-") ? k.userId : '<span class="text-zinc-600">Nenhum</span>';
 
                 tr.innerHTML = `
-                    <td class="p-4 font-mono text-gray-300">${k.key}</td>
-                    <td class="p-4">${statusBadge}</td>
-                    <td class="p-4 text-gray-400">${k.days} Dias <br><span class="text-xs text-gray-500">${k.expiresAt || '-'}</span></td>
-                    <td class="p-4 font-mono text-xs text-gray-400">${k.userId || '-'}</td>
-                    <td class="p-4 text-right">
-                        <button onclick="deleteKey('${k.key}')" class="text-red-500 hover:text-white hover:bg-red-600 border border-red-500/30 px-3 py-1 rounded transition text-sm">
-                            <i class="fa-solid fa-trash"></i>
+                    <td class="px-6 py-4 font-mono text-zinc-300 font-medium tracking-wide">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-key text-zinc-600 text-xs"></i>
+                            ${k.key}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-zinc-300">${k.days} Dias</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">${dataExpiracao}</div>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-xs text-zinc-400">${userText}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="deleteKey('${k.key}')" class="text-zinc-500 hover:text-red-400 bg-white/5 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 w-8 h-8 rounded-lg transition flex items-center justify-center ml-auto" title="Apagar Key">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
                         </button>
                     </td>
                 `;
@@ -326,16 +491,19 @@
         }
 
         async function deleteKey(keyStr) {
-            if (!confirm(`Tens a certeza que queres apagar a key ${keyStr}?`)) return;
+            if (!confirm(`TEM A CERTEZA?\n\nA key ${keyStr} será permanentemente apagada do banco de dados.`)) return;
 
             const data = await apiRequest('/delete', { password: adminPass, key: keyStr });
             if (data.success) {
-                showToast("Key apagada com sucesso!");
-                loadKeys(); // Recarrega a lista
+                showToast(`Key ${keyStr} apagada com sucesso.`, "success");
+                loadKeys(); // Recarrega
             } else {
-                showToast(data.error || "Erro ao apagar key.", true);
+                showToast(data.error || "Erro ao apagar key.", "error");
             }
         }
     </script>
 </body>
 </html>
+
+
+```
