@@ -105,6 +105,9 @@
         <span id="toast-msg" class="font-medium text-sm"></span>
     </div>
 
+    <!-- Input Global para Formato da Key -->
+    <input type="hidden" id="global-key-format" value="tradicional">
+
     <!-- ECRÃ DE LOGIN -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center z-40 bg-kxDark/90 backdrop-blur-sm">
         <div class="glass-card p-10 rounded-2xl w-full max-w-[400px] m-4 relative overflow-hidden">
@@ -181,6 +184,15 @@
                     </h2>
                     
                     <div class="space-y-6 flex-1">
+                        <!-- NOVO: FORMATO DA KEY -->
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
+                            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
+                                <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
+                            </div>
+                        </div>
+
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Tempo de Validade</label>
                             <div class="grid grid-cols-3 gap-2 sm:gap-3">
@@ -238,6 +250,16 @@
                     </h2>
                     
                     <div class="space-y-6 flex-1">
+
+                        <!-- NOVO: FORMATO DA KEY -->
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
+                            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
+                                <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
+                            </div>
+                        </div>
+
                         <!-- Inputs de Tempo -->
                         <div class="grid grid-cols-3 gap-3">
                             <div>
@@ -326,6 +348,22 @@
 
     <script>
         let adminPass = "";
+
+        // --- SISTEMA DE FORMATO DA KEY ---
+        function setKeyFormat(format) {
+            document.getElementById('global-key-format').value = format;
+            
+            const btnsTradicional = document.querySelectorAll('.fmt-tradicional-btn');
+            const btnsZkXit = document.querySelectorAll('.fmt-zkxit-btn');
+
+            if (format === 'tradicional') {
+                btnsTradicional.forEach(btn => btn.className = "fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all");
+                btnsZkXit.forEach(btn => btn.className = "fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all");
+            } else {
+                btnsTradicional.forEach(btn => btn.className = "fmt-tradicional-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all");
+                btnsZkXit.forEach(btn => btn.className = "fmt-zkxit-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all");
+            }
+        }
 
         // --- FUNÇÃO DA BARRA DE DIAS RÁPIDA ---
         function selectDay(days) {
@@ -423,7 +461,7 @@
             showToast("Sessão terminada.", "info");
         }
 
-        // --- TABS (AGORA SÃO 3 ABAS) ---
+        // --- TABS ---
         function switchTab(tab) {
             const tabs = ['gerar', 'custom', 'gerir'];
             
@@ -458,6 +496,9 @@
             let qty = 1;
             let btnId = '';
             let outId = '';
+            
+            // LER O FORMATO ESCOLHIDO
+            const formatChoice = document.getElementById('global-key-format').value;
 
             if (type === 'rapido') {
                 totalDays = parseFloat(document.getElementById('gen-days').value) || 7;
@@ -469,7 +510,6 @@
                 const h = parseInt(document.getElementById('custom-horas').value) || 0;
                 const m = parseInt(document.getElementById('custom-minutos').value) || 0;
                 
-                // Transforma tudo num número só de dias (o servidor vai entender perfeitamente)
                 totalDays = d + (h / 24) + (m / 1440);
                 qty = parseInt(document.getElementById('custom-qty').value) || 1;
                 btnId = 'btn-generate-custom';
@@ -488,7 +528,13 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            const data = await apiRequest('/generate', { password: adminPass, days: totalDays, quantity: qty });
+            // ENVIAMOS O FORMATO PARA O SERVIDOR
+            const data = await apiRequest('/generate', { 
+                password: adminPass, 
+                days: totalDays, 
+                quantity: qty,
+                format: formatChoice // <-- Parâmetro Novo
+            });
 
             btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
@@ -512,7 +558,7 @@
             showToast("Keys copiadas para a área de transferência!", "success");
         }
 
-        // --- FORMATAR DIAS (Ex: 1.5 vira "1d 12h") ---
+        // --- FORMATAR DIAS ---
         function formatFractionalDays(fractionalDays) {
             if (fractionalDays >= 999) return "Vitalício";
             const totalMins = Math.round(fractionalDays * 24 * 60);
@@ -570,7 +616,6 @@
                 const dataExpiracao = k.expiresAt ? k.expiresAt : '<span class="text-zinc-600">Não ativada</span>';
                 const userText = (k.userId && k.userId !== "-") ? k.userId : '<span class="text-zinc-600">Nenhum</span>';
                 
-                // Transforma o número que vem do servidor (ex: 1.5) numa string bonita (ex: "1d 12h")
                 const tempoBonito = formatFractionalDays(k.days);
 
                 tr.innerHTML = `
