@@ -184,7 +184,7 @@
                     </h2>
                     
                     <div class="space-y-6 flex-1">
-                        <!-- NOVO: FORMATO DA KEY -->
+                        <!-- FORMATO DA KEY -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
                             <div class="grid grid-cols-2 gap-2 sm:gap-3">
@@ -234,13 +234,13 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas rapidamente aparecerão aqui..."></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - PLOIUKLOP90"></textarea>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ABA 2: KEY PERSONALIZADA (Dias, Horas, Minutos) -->
+        <!-- ABA 2: KEY PERSONALIZADA -->
         <div id="view-custom" class="hidden space-y-6 animate-[fadeIn_0.3s_ease]">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
@@ -251,7 +251,7 @@
                     
                     <div class="space-y-6 flex-1">
 
-                        <!-- NOVO: FORMATO DA KEY -->
+                        <!-- FORMATO DA KEY -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
                             <div class="grid grid-cols-2 gap-2 sm:gap-3">
@@ -304,7 +304,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves personalizadas aparecerão aqui..."></textarea>
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - PLOIUKLOP90"></textarea>
                     </div>
                 </div>
             </div>
@@ -490,14 +490,13 @@
             input.value = val;
         }
 
-        // --- GERAR KEYS (Rápido e Personalizado) ---
+        // --- GERAR KEYS ---
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
             let btnId = '';
             let outId = '';
             
-            // LER O FORMATO ESCOLHIDO
             const formatChoice = document.getElementById('global-key-format').value;
 
             if (type === 'rapido') {
@@ -528,19 +527,25 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // ENVIAMOS O FORMATO PARA O SERVIDOR
+            // Envia o pedido normal sem alterar o backend
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
-                quantity: qty,
-                format: formatChoice // <-- Parâmetro Novo
+                quantity: qty
             });
 
             btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
 
             if (data.success) {
-                out.value = data.keys.join('\n');
+                let finalKeys = data.keys;
+
+                // TRUQUE NO HTML: O próprio gerador cola "ZkXit|3.0 - " na frente!
+                if (formatChoice === 'zkxit') {
+                    finalKeys = data.keys.map(k => "ZkXit|3.0 - " + k);
+                }
+
+                out.value = finalKeys.join('\n');
                 showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
                 showToast(data.error || "Erro ao gerar keys.", "error");
