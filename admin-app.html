@@ -187,9 +187,10 @@
                         <!-- FORMATO DA KEY -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
-                            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                            <div class="grid grid-cols-3 gap-2">
                                 <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
                                 <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
+                                <button type="button" onclick="setKeyFormat('delta')" class="fmt-delta-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Novo Painel</button>
                             </div>
                         </div>
 
@@ -234,7 +235,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - HG-28W-BLC-OPM-OPIU-P90"></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As suas keys irão aparecer aqui..."></textarea>
                     </div>
                 </div>
             </div>
@@ -254,9 +255,10 @@
                         <!-- FORMATO DA KEY -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
-                            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                            <div class="grid grid-cols-3 gap-2">
                                 <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
                                 <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
+                                <button type="button" onclick="setKeyFormat('delta')" class="fmt-delta-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Novo Painel</button>
                             </div>
                         </div>
 
@@ -304,7 +306,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - HG-28W-BLC-OPM-OPIU-P90"></textarea>
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As suas keys aparecerão aqui..."></textarea>
                     </div>
                 </div>
             </div>
@@ -349,9 +351,7 @@
     <script>
         let adminPass = "";
 
-        // ==========================================
-        // SISTEMA GERADOR DA KEY 
-        // ==========================================
+        // --- SISTEMA DE FORMATO DA KEY MÁGICO ---
         function generateKeyByFormat(format) {
             const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const numbers = "0123456789";
@@ -366,19 +366,27 @@
             };
 
             if (format === 'zkxit') {
-                // NOVO FORMATO ZK COM 5 FILEIRAS (HÍFENS): HG-28W-BLC-OPM-OPIU-P90
-                const p1 = randChars(2, letters);
+                // Zk Xit | 3.0: "ZkXit|3.0 - XXX-XXX-XXX"
+                const p1 = randChars(3, alphaNum);
                 const p2 = randChars(3, alphaNum);
-                const p3 = randChars(3, letters);
+                const p3 = randChars(3, alphaNum);
+                return `ZkXit|3.0 - ${p1}-${p2}-${p3}`;
+            } 
+            else if (format === 'delta') {
+                // Novo Painel (Delta): HG-409-987-NBV-&
+                const p1 = randChars(2, letters);
+                const p2 = randChars(3, numbers);
+                const p3 = randChars(3, numbers);
                 const p4 = randChars(3, letters);
-                const p5 = randChars(4, letters);
-                const p6 = randChars(3, alphaNum);
-                
-                return `${p1}-${p2}-${p3}-${p4}-${p5}-${p6}`;
+                const p5 = "&";
+                return `${p1}-${p2}-${p3}-${p4}-${p5}`;
             } 
             else {
-                // ESTILO TRADICIONAL (Ex: KX-XXXXXXXX)
-                return `KX-${randChars(8, alphaNum)}`;
+                // Tradicional: SQN-A3U-N9E
+                const p1 = randChars(3, alphaNum);
+                const p2 = randChars(3, alphaNum);
+                const p3 = randChars(3, alphaNum);
+                return `${p1}-${p2}-${p3}`;
             }
         }
 
@@ -388,14 +396,14 @@
             
             const btnsTradicional = document.querySelectorAll('.fmt-tradicional-btn');
             const btnsZkXit = document.querySelectorAll('.fmt-zkxit-btn');
+            const btnsDelta = document.querySelectorAll('.fmt-delta-btn');
 
-            if (format === 'tradicional') {
-                btnsTradicional.forEach(btn => btn.className = "fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all");
-                btnsZkXit.forEach(btn => btn.className = "fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all");
-            } else {
-                btnsTradicional.forEach(btn => btn.className = "fmt-tradicional-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all");
-                btnsZkXit.forEach(btn => btn.className = "fmt-zkxit-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all");
-            }
+            const activeClass = "py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all";
+            const inactiveClass = "py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all";
+
+            btnsTradicional.forEach(btn => btn.className = `fmt-tradicional-btn ${format === 'tradicional' ? activeClass : inactiveClass}`);
+            btnsZkXit.forEach(btn => btn.className = `fmt-zkxit-btn ${format === 'zkxit' ? activeClass : inactiveClass}`);
+            btnsDelta.forEach(btn => btn.className = `fmt-delta-btn ${format === 'delta' ? activeClass : inactiveClass}`);
         }
 
         // --- FUNÇÃO DA BARRA DE DIAS RÁPIDA ---
@@ -523,7 +531,7 @@
             input.value = val;
         }
 
-        // --- GERAR E EXIBIR AS KEYS ---
+        // --- GERAR KEYS PARA O BACKEND ---
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
@@ -566,7 +574,7 @@
                 clientGeneratedKeys.push(generateKeyByFormat(formatChoice));
             }
 
-            // Envia o array pro backend gravar e validar
+            // Envia o array pronto para o backend gravar
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
@@ -578,17 +586,10 @@
             btn.disabled = false;
 
             if (data.success) {
-                // A chave pura está salva na BD (ex: HG-28W-BLC-OPM-OPIU-P90)
+                // Imprime na tela o formato final que veio do banco de dados/local
                 const finalKeys = (data.keys && data.keys.length > 0) ? data.keys : clientGeneratedKeys;
-                
-                // MÁGICA: Se a escolha foi "zkxit", ele adiciona o prefixo apenas visualmente no painel!
-                let displayKeys = finalKeys;
-                if (formatChoice === 'zkxit') {
-                    displayKeys = finalKeys.map(k => "ZkXit|3.0 - " + k);
-                }
-
-                out.value = displayKeys.join('\n');
-                showToast(`${displayKeys.length} Key(s) gerada(s) com sucesso!`, "success");
+                out.value = finalKeys.join('\n');
+                showToast(`${finalKeys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
                 showToast(data.error || "Erro ao gerar keys.", "error");
             }
@@ -665,7 +666,6 @@
                 
                 const tempoBonito = formatFractionalDays(k.days);
 
-                // Mostramos a key pura na tabela de gestão (Ex: HG-28W-BLC-...)
                 tr.innerHTML = `
                     <td class="px-6 py-4 font-mono text-zinc-300 font-medium tracking-wide">
                         <div class="flex items-center gap-3">
