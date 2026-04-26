@@ -234,7 +234,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - PLOIUKLOP90"></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - HG-28W-BLC-OPM-OPIU-P90"></textarea>
                     </div>
                 </div>
             </div>
@@ -304,7 +304,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - PLOIUKLOP90"></textarea>
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - HG-28W-BLC-OPM-OPIU-P90"></textarea>
                     </div>
                 </div>
             </div>
@@ -349,7 +349,40 @@
     <script>
         let adminPass = "";
 
-        // --- SISTEMA DE FORMATO DA KEY ---
+        // ==========================================
+        // SISTEMA GERADOR DA KEY 
+        // ==========================================
+        function generateKeyByFormat(format) {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const numbers = "0123456789";
+            const alphaNum = letters + numbers;
+            
+            const randChars = (len, chars) => {
+                let result = '';
+                for (let i = 0; i < len; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return result;
+            };
+
+            if (format === 'zkxit') {
+                // NOVO FORMATO ZK COM 5 FILEIRAS (HÍFENS): HG-28W-BLC-OPM-OPIU-P90
+                const p1 = randChars(2, letters);
+                const p2 = randChars(3, alphaNum);
+                const p3 = randChars(3, letters);
+                const p4 = randChars(3, letters);
+                const p5 = randChars(4, letters);
+                const p6 = randChars(3, alphaNum);
+                
+                return `${p1}-${p2}-${p3}-${p4}-${p5}-${p6}`;
+            } 
+            else {
+                // ESTILO TRADICIONAL (Ex: KX-XXXXXXXX)
+                return `KX-${randChars(8, alphaNum)}`;
+            }
+        }
+
+        // --- SISTEMA DE SELEÇÃO DO FORMATO NA INTERFACE ---
         function setKeyFormat(format) {
             document.getElementById('global-key-format').value = format;
             
@@ -490,7 +523,7 @@
             input.value = val;
         }
 
-        // --- GERAR KEYS ---
+        // --- GERAR E EXIBIR AS KEYS ---
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
@@ -527,26 +560,35 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // Envia o pedido normal sem alterar o backend
+            // Gera as Keys aqui no JavaScript de acordo com o Formato
+            const clientGeneratedKeys = [];
+            for (let i = 0; i < qty; i++) {
+                clientGeneratedKeys.push(generateKeyByFormat(formatChoice));
+            }
+
+            // Envia o array pro backend gravar e validar
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
-                quantity: qty
+                quantity: qty,
+                keys: clientGeneratedKeys 
             });
 
             btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
 
             if (data.success) {
-                let finalKeys = data.keys;
-
-                // TRUQUE NO HTML: O próprio gerador cola "ZkXit|3.0 - " na frente!
+                // A chave pura está salva na BD (ex: HG-28W-BLC-OPM-OPIU-P90)
+                const finalKeys = (data.keys && data.keys.length > 0) ? data.keys : clientGeneratedKeys;
+                
+                // MÁGICA: Se a escolha foi "zkxit", ele adiciona o prefixo apenas visualmente no painel!
+                let displayKeys = finalKeys;
                 if (formatChoice === 'zkxit') {
-                    finalKeys = data.keys.map(k => "ZkXit|3.0 - " + k);
+                    displayKeys = finalKeys.map(k => "ZkXit|3.0 - " + k);
                 }
 
-                out.value = finalKeys.join('\n');
-                showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`, "success");
+                out.value = displayKeys.join('\n');
+                showToast(`${displayKeys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
                 showToast(data.error || "Erro ao gerar keys.", "error");
             }
@@ -623,6 +665,7 @@
                 
                 const tempoBonito = formatFractionalDays(k.days);
 
+                // Mostramos a key pura na tabela de gestão (Ex: HG-28W-BLC-...)
                 tr.innerHTML = `
                     <td class="px-6 py-4 font-mono text-zinc-300 font-medium tracking-wide">
                         <div class="flex items-center gap-3">
