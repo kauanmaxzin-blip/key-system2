@@ -97,7 +97,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-kxAccent1 selection:text-white antialiased">
+<body class="min-h-screen flex flex-col font-sans selection:bg-kxAccent1 selection:text-white antialiased" onload="setKeyFormat('delta')">
 
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none z-50 flex items-center gap-3 backdrop-blur-md border border-white/10">
@@ -106,7 +106,7 @@
     </div>
 
     <!-- Input Global para Formato da Key -->
-    <input type="hidden" id="global-key-format" value="tradicional">
+    <input type="hidden" id="global-key-format" value="delta">
 
     <!-- ECRÃ DE LOGIN -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center z-40 bg-kxDark/90 backdrop-blur-sm">
@@ -188,9 +188,9 @@
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
                             <div class="grid grid-cols-3 gap-2">
-                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
+                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Tradicional</button>
                                 <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
-                                <button type="button" onclick="setKeyFormat('delta')" class="fmt-delta-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Novo Painel</button>
+                                <button type="button" onclick="setKeyFormat('delta')" class="fmt-delta-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Novo Painel</button>
                             </div>
                         </div>
 
@@ -235,7 +235,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As suas keys irão aparecer aqui..."></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: HG-409-987-NBV-&"></textarea>
                     </div>
                 </div>
             </div>
@@ -256,9 +256,9 @@
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
                             <div class="grid grid-cols-3 gap-2">
-                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
+                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Tradicional</button>
                                 <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
-                                <button type="button" onclick="setKeyFormat('delta')" class="fmt-delta-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Novo Painel</button>
+                                <button type="button" onclick="setKeyFormat('delta')" class="fmt-delta-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Novo Painel</button>
                             </div>
                         </div>
 
@@ -306,7 +306,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As suas keys aparecerão aqui..."></textarea>
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: HG-409-987-NBV-&"></textarea>
                     </div>
                 </div>
             </div>
@@ -351,7 +351,9 @@
     <script>
         let adminPass = "";
 
-        // --- SISTEMA DE FORMATO DA KEY MÁGICO ---
+        // ==========================================
+        // SISTEMA GERADOR DA KEY COM OS 3 PADRÕES EXATOS
+        // ==========================================
         function generateKeyByFormat(format) {
             const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const numbers = "0123456789";
@@ -366,14 +368,14 @@
             };
 
             if (format === 'zkxit') {
-                // Zk Xit | 3.0: "ZkXit|3.0 - XXX-XXX-XXX"
+                // Zk Xit | 3.0: ZkXit|3.0 - 9E8-9X9-CSB
                 const p1 = randChars(3, alphaNum);
                 const p2 = randChars(3, alphaNum);
                 const p3 = randChars(3, alphaNum);
                 return `ZkXit|3.0 - ${p1}-${p2}-${p3}`;
             } 
             else if (format === 'delta') {
-                // Novo Painel (Delta): HG-409-987-NBV-&
+                // Novo Painel: HG-409-987-NBV-&
                 const p1 = randChars(2, letters);
                 const p2 = randChars(3, numbers);
                 const p3 = randChars(3, numbers);
@@ -404,6 +406,22 @@
             btnsTradicional.forEach(btn => btn.className = `fmt-tradicional-btn ${format === 'tradicional' ? activeClass : inactiveClass}`);
             btnsZkXit.forEach(btn => btn.className = `fmt-zkxit-btn ${format === 'zkxit' ? activeClass : inactiveClass}`);
             btnsDelta.forEach(btn => btn.className = `fmt-delta-btn ${format === 'delta' ? activeClass : inactiveClass}`);
+
+            // Atualiza o texto visual de exemplo (Placeholder) no Output
+            const outGen = document.getElementById('gen-output');
+            const outCustom = document.getElementById('custom-output');
+            
+            let exemploText = "";
+            if (format === 'tradicional') {
+                exemploText = "Exemplo: SQN-A3U-N9E";
+            } else if (format === 'zkxit') {
+                exemploText = "Exemplo: ZkXit|3.0 - 9E8-9X9-CSB";
+            } else {
+                exemploText = "Exemplo: HG-409-987-NBV-&";
+            }
+
+            if (outGen) outGen.placeholder = exemploText;
+            if (outCustom) outCustom.placeholder = exemploText;
         }
 
         // --- FUNÇÃO DA BARRA DE DIAS RÁPIDA ---
@@ -568,7 +586,7 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // Gera as Keys aqui no JavaScript de acordo com o Formato
+            // Gera as Keys aqui no JavaScript de acordo com o Formato exato (incluindo ZkXit|3.0 - )
             const clientGeneratedKeys = [];
             for (let i = 0; i < qty; i++) {
                 clientGeneratedKeys.push(generateKeyByFormat(formatChoice));
