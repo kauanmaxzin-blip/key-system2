@@ -41,6 +41,7 @@
             background-attachment: fixed;
         }
         
+        /* Efeito Glassmorphism */
         .glass-card {
             background: rgba(19, 19, 22, 0.7);
             backdrop-filter: blur(12px);
@@ -79,6 +80,7 @@
             filter: grayscale(0.5);
         }
 
+        /* Tabs animadas */
         .tab-btn { position: relative; transition: color 0.3s ease; }
         .tab-btn.active { color: white; }
         .tab-indicator {
@@ -88,6 +90,7 @@
         }
         .tab-btn.active .tab-indicator { transform: scaleX(1); }
 
+        /* Scrollbar fina */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
@@ -96,12 +99,16 @@
 </head>
 <body class="min-h-screen flex flex-col font-sans selection:bg-kxAccent1 selection:text-white antialiased">
 
+    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 transform translate-y-12 opacity-0 pointer-events-none z-50 flex items-center gap-3 backdrop-blur-md border border-white/10">
         <i id="toast-icon" class="fa-solid fa-circle-info"></i>
         <span id="toast-msg" class="font-medium text-sm"></span>
     </div>
 
-    <!-- Ecrã de Login -->
+    <!-- Input Global para Formato da Key -->
+    <input type="hidden" id="global-key-format" value="tradicional">
+
+    <!-- ECRÃ DE LOGIN -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center z-40 bg-kxDark/90 backdrop-blur-sm">
         <div class="glass-card p-10 rounded-2xl w-full max-w-[400px] m-4 relative overflow-hidden">
             <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-kxAccent1 to-transparent opacity-50"></div>
@@ -132,9 +139,10 @@
         </div>
     </div>
 
-    <!-- App Principal -->
+    <!-- APP PRINCIPAL -->
     <div id="app" class="hidden flex-1 flex-col max-w-5xl w-full mx-auto p-4 sm:p-8">
         
+        <!-- Header -->
         <header class="flex justify-between items-center mb-8 bg-transparent">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-kxAccent1/20 to-kxAccent2/20 border border-kxAccent1/30 flex items-center justify-center shadow-[0_0_20px_rgba(115,100,255,0.15)]">
@@ -150,6 +158,7 @@
             </button>
         </header>
 
+        <!-- Navegação (Tabs) -->
         <div class="flex border-b border-kxBorder mb-8 gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1">
             <button onclick="switchTab('gerar')" id="tab-gerar" class="tab-btn active pb-3 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-all">
                 <i class="fa-solid fa-bolt mr-2"></i> Rápido
@@ -165,10 +174,11 @@
             </button>
         </div>
 
-        <!-- ABA: Rápido -->
+        <!-- ABA 1: GERADOR RÁPIDO (Botões) -->
         <div id="view-gerar" class="space-y-6 animate-[fadeIn_0.3s_ease]">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col h-full">
+                <!-- Definicoes -->
+                <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
                     <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
                         <i class="fa-solid fa-sliders text-kxAccent1"></i> Parâmetros
                     </h2>
@@ -177,12 +187,10 @@
                         <!-- FORMATO DA KEY -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <button type="button" onclick="selectFormat('gen', 'novo')" id="btn-fmt-gen-novo" class="fmt-gen-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Novo (Delta)</button>
-                                <button type="button" onclick="selectFormat('gen', 'tradicional')" id="btn-fmt-gen-tradicional" class="fmt-gen-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Tradicional</button>
-                                <button type="button" onclick="selectFormat('gen', 'zk')" id="btn-fmt-gen-zk" class="fmt-gen-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Estilo ZK</button>
+                            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
+                                <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
                             </div>
-                            <input type="hidden" id="gen-format" value="novo">
                         </div>
 
                         <div>
@@ -199,7 +207,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade a Gerar</label>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
                             <div class="relative flex items-center">
                                 <button type="button" onclick="changeQty('gen-qty', -1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
                                 <input type="number" id="gen-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
@@ -215,7 +223,8 @@
                     </div>
                 </div>
 
-                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col min-h-[300px]">
+                <!-- Resultado -->
+                <div class="glass-card p-6 rounded-2xl lg:col-span-7 flex flex-col min-h-[300px]">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
                             <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
@@ -225,33 +234,33 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas aparecerão aqui..."></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - PLOIUKLOP90"></textarea>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ABA: Personalizada -->
+        <!-- ABA 2: KEY PERSONALIZADA -->
         <div id="view-custom" class="hidden space-y-6 animate-[fadeIn_0.3s_ease]">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col h-full">
+                <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
                     <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
                         <i class="fa-solid fa-stopwatch text-kxAccent1"></i> Tempo Personalizado
                     </h2>
                     
                     <div class="space-y-6 flex-1">
-                        <!-- FORMATO DA KEY CUSTOM -->
+
+                        <!-- FORMATO DA KEY -->
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <button type="button" onclick="selectFormat('custom', 'novo')" id="btn-fmt-custom-novo" class="fmt-custom-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Novo (Delta)</button>
-                                <button type="button" onclick="selectFormat('custom', 'tradicional')" id="btn-fmt-custom-tradicional" class="fmt-custom-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Tradicional</button>
-                                <button type="button" onclick="selectFormat('custom', 'zk')" id="btn-fmt-custom-zk" class="fmt-custom-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Estilo ZK</button>
+                            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                                <button type="button" onclick="setKeyFormat('tradicional')" class="fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Tradicional</button>
+                                <button type="button" onclick="setKeyFormat('zkxit')" class="fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Zk Xit | 3.0</button>
                             </div>
-                            <input type="hidden" id="custom-format" value="novo">
                         </div>
 
+                        <!-- Inputs de Tempo -->
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider text-center">Dias</label>
@@ -268,7 +277,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade a Gerar</label>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
                             <div class="relative flex items-center">
                                 <button type="button" onclick="changeQty('custom-qty', -1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
                                 <input type="number" id="custom-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
@@ -284,7 +293,8 @@
                     </div>
                 </div>
 
-                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col min-h-[300px]">
+                <!-- Resultado -->
+                <div class="glass-card p-6 rounded-2xl lg:col-span-7 flex flex-col min-h-[300px]">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
                             <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
@@ -294,13 +304,13 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves personalizadas aparecerão aqui..."></textarea>
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="Exemplo: ZkXit|3.0 - PLOIUKLOP90"></textarea>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ABA: Base de Dados -->
+        <!-- ABA 3: GERIR KEYS -->
         <div id="view-gerir" class="hidden flex-col flex-1 animate-[fadeIn_0.3s_ease]">
             <div class="flex justify-between items-end mb-6">
                 <div>
@@ -314,6 +324,7 @@
                 </button>
             </div>
 
+            <!-- Tabela -->
             <div class="glass-card rounded-2xl overflow-hidden flex-1 border border-white/5 shadow-xl flex flex-col">
                 <div class="overflow-x-auto flex-1">
                     <table class="w-full text-left border-collapse whitespace-nowrap">
@@ -338,54 +349,23 @@
     <script>
         let adminPass = "";
 
-        // ==========================================
-        // SISTEMA GERADOR DOS DIFERENTES ESTILOS DE KEY
-        // ==========================================
-        function generateKeyByFormat(format) {
-            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            const numbers = "0123456789";
-            const alphaNum = letters + numbers;
+        // --- SISTEMA DE FORMATO DA KEY ---
+        function setKeyFormat(format) {
+            document.getElementById('global-key-format').value = format;
             
-            const randChars = (len, chars) => {
-                let result = '';
-                for (let i = 0; i < len; i++) {
-                    result += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return result;
-            };
+            const btnsTradicional = document.querySelectorAll('.fmt-tradicional-btn');
+            const btnsZkXit = document.querySelectorAll('.fmt-zkxit-btn');
 
-            if (format === 'zk') {
-                // Estilo ZK (Exemplo: ZK-A1B2-C3D4)
-                return `ZK-${randChars(4, alphaNum)}-${randChars(4, alphaNum)}`;
-            } 
-            else if (format === 'tradicional') {
-                // Estilo Tradicional (Exemplo: KX-8X9B2C1D)
-                return `KX-${randChars(8, alphaNum)}`;
-            } 
-            else {
-                // Novo Estilo Delta (Exemplo: HG-MPO@90!&) -> PADRÃO
-                const part1 = randChars(2, letters);
-                const part2 = randChars(3, letters);
-                const part3 = randChars(2, numbers);
-                return `${part1}-${part2}@${part3}!&`;
+            if (format === 'tradicional') {
+                btnsTradicional.forEach(btn => btn.className = "fmt-tradicional-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all");
+                btnsZkXit.forEach(btn => btn.className = "fmt-zkxit-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all");
+            } else {
+                btnsTradicional.forEach(btn => btn.className = "fmt-tradicional-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all");
+                btnsZkXit.forEach(btn => btn.className = "fmt-zkxit-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all");
             }
         }
 
-        // ==========================================
-        // LÓGICA DE INTERFACE DOS FORMATOS E DIAS
-        // ==========================================
-        function selectFormat(tabPrefix, format) {
-            document.getElementById(`${tabPrefix}-format`).value = format;
-            const buttons = document.querySelectorAll(`.fmt-${tabPrefix}-btn`);
-            buttons.forEach(btn => {
-                btn.className = `fmt-${tabPrefix}-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all`;
-            });
-            const activeBtn = document.getElementById(`btn-fmt-${tabPrefix}-${format}`);
-            if (activeBtn) {
-                activeBtn.className = `fmt-${tabPrefix}-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all`;
-            }
-        }
-
+        // --- FUNÇÃO DA BARRA DE DIAS RÁPIDA ---
         function selectDay(days) {
             document.getElementById('gen-days').value = days;
             const buttons = document.querySelectorAll('.day-btn');
@@ -398,6 +378,7 @@
             }
         }
 
+        // --- SISTEMA DE TOAST ---
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const toastIcon = document.getElementById('toast-icon');
@@ -425,6 +406,7 @@
             }, 3500);
         }
 
+        // --- API FETCHER ---
         async function apiRequest(endpoint, body) {
             try {
                 const res = await fetch(endpoint, {
@@ -438,6 +420,7 @@
             }
         }
 
+        // --- LOGIN ---
         async function doLogin() {
             const passInput = document.getElementById('password').value;
             const btn = document.getElementById('btn-login');
@@ -478,6 +461,7 @@
             showToast("Sessão terminada.", "info");
         }
 
+        // --- TABS ---
         function switchTab(tab) {
             const tabs = ['gerar', 'custom', 'gerir'];
             
@@ -496,6 +480,7 @@
             }
         }
 
+        // --- QTY CONTROLS ---
         function changeQty(inputId, amount) {
             const input = document.getElementById(inputId);
             let val = parseInt(input.value) || 1;
@@ -505,22 +490,20 @@
             input.value = val;
         }
 
-        // ==========================================
-        // COMUNICAÇÃO COM O SERVIDOR
-        // ==========================================
+        // --- GERAR KEYS ---
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
             let btnId = '';
             let outId = '';
-            let formatId = '';
+            
+            const formatChoice = document.getElementById('global-key-format').value;
 
             if (type === 'rapido') {
                 totalDays = parseFloat(document.getElementById('gen-days').value) || 7;
                 qty = parseInt(document.getElementById('gen-qty').value) || 1;
                 btnId = 'btn-generate-rapido';
                 outId = 'gen-output';
-                formatId = 'gen-format';
             } else if (type === 'custom') {
                 const d = parseInt(document.getElementById('custom-dias').value) || 0;
                 const h = parseInt(document.getElementById('custom-horas').value) || 0;
@@ -530,7 +513,6 @@
                 qty = parseInt(document.getElementById('custom-qty').value) || 1;
                 btnId = 'btn-generate-custom';
                 outId = 'custom-output';
-                formatId = 'custom-format';
 
                 if (totalDays <= 0) {
                     showToast("O tempo total deve ser maior que zero!", "error");
@@ -538,7 +520,6 @@
                 }
             }
 
-            const format = document.getElementById(formatId).value;
             const btn = document.getElementById(btnId);
             const out = document.getElementById(outId);
 
@@ -546,27 +527,26 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // Gera as Keys aqui no Javascript de acordo com o Formato escolhido
-            const clientGeneratedKeys = [];
-            for (let i = 0; i < qty; i++) {
-                clientGeneratedKeys.push(generateKeyByFormat(format));
-            }
-
-            // Envia o array pro backend gravar e validar
+            // Envia o pedido normal sem alterar o backend
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
-                quantity: qty,
-                keys: clientGeneratedKeys 
+                quantity: qty
             });
 
             btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
 
             if (data.success) {
-                const finalKeys = (data.keys && data.keys.length > 0) ? data.keys : clientGeneratedKeys;
+                let finalKeys = data.keys;
+
+                // TRUQUE NO HTML: O próprio gerador cola "ZkXit|3.0 - " na frente!
+                if (formatChoice === 'zkxit') {
+                    finalKeys = data.keys.map(k => "ZkXit|3.0 - " + k);
+                }
+
                 out.value = finalKeys.join('\n');
-                showToast(`${finalKeys.length} Key(s) ${format} gerada(s) com sucesso!`, "success");
+                showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
                 showToast(data.error || "Erro ao gerar keys.", "error");
             }
@@ -583,6 +563,7 @@
             showToast("Keys copiadas para a área de transferência!", "success");
         }
 
+        // --- FORMATAR DIAS ---
         function formatFractionalDays(fractionalDays) {
             if (fractionalDays >= 999) return "Vitalício";
             const totalMins = Math.round(fractionalDays * 24 * 60);
@@ -597,13 +578,14 @@
             return res.join(' ');
         }
 
+        // --- GERIR KEYS ---
         async function loadKeys() {
             const tbody = document.getElementById('keys-tbody');
             const btn = document.getElementById('btn-refresh');
             const countLbl = document.getElementById('key-count');
 
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Atualizar';
-            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> A sincronizar...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-circle-notch fa-spin text-kxAccent1 text-2xl mb-3 block"></i> Sincronizando...</td></tr>';
 
             const data = await apiRequest('/list', { password: adminPass });
             btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Atualizar';
@@ -616,7 +598,7 @@
             countLbl.innerText = data.total;
 
             if (data.keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-database text-2xl mb-3 block opacity-50"></i> Base de dados vazia.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-zinc-500"><i class="fa-solid fa-database text-2xl mb-3 block opacity-50"></i> Banco de dados vazio.</td></tr>';
                 return;
             }
 
@@ -633,11 +615,12 @@
                 } else if(k.status === 'expirada') {
                     statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 text-red-400 rounded-lg text-[11px] font-bold tracking-wide border border-red-500/20"><span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> EXPIRADA</span>';
                 } else {
-                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 text-yellow-400 rounded-lg text-[11px] font-bold tracking-wide border border-yellow-500/20"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> A AGUARDAR</span>';
+                    statusBadge = '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-500/10 text-yellow-400 rounded-lg text-[11px] font-bold tracking-wide border border-yellow-500/20"><span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> AGUARDANDO</span>';
                 }
 
                 const dataExpiracao = k.expiresAt ? k.expiresAt : '<span class="text-zinc-600">Não ativada</span>';
                 const userText = (k.userId && k.userId !== "-") ? k.userId : '<span class="text-zinc-600">Nenhum</span>';
+                
                 const tempoBonito = formatFractionalDays(k.days);
 
                 tr.innerHTML = `
@@ -664,7 +647,7 @@
         }
 
         async function deleteKey(keyStr) {
-            if (!confirm(`TEM A CERTEZA?\n\nA key ${keyStr} será permanentemente apagada da base de dados.`)) return;
+            if (!confirm(`TEM A CERTEZA?\n\nA key ${keyStr} será permanentemente apagada do banco de dados.`)) return;
 
             const data = await apiRequest('/delete', { password: adminPass, key: keyStr });
             if (data.success) {
