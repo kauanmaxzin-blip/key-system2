@@ -168,12 +168,23 @@
         <!-- ABA: Rápido -->
         <div id="view-gerar" class="space-y-6 animate-[fadeIn_0.3s_ease]">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
+                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col h-full">
                     <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
                         <i class="fa-solid fa-sliders text-kxAccent1"></i> Parâmetros
                     </h2>
                     
                     <div class="space-y-6 flex-1">
+                        <!-- FORMATO DA KEY -->
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" onclick="selectFormat('gen', 'novo')" id="btn-fmt-gen-novo" class="fmt-gen-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Novo (Delta)</button>
+                                <button type="button" onclick="selectFormat('gen', 'tradicional')" id="btn-fmt-gen-tradicional" class="fmt-gen-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Tradicional</button>
+                                <button type="button" onclick="selectFormat('gen', 'zk')" id="btn-fmt-gen-zk" class="fmt-gen-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Estilo ZK</button>
+                            </div>
+                            <input type="hidden" id="gen-format" value="novo">
+                        </div>
+
                         <div>
                             <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Tempo de Validade</label>
                             <div class="grid grid-cols-3 gap-2 sm:gap-3">
@@ -188,7 +199,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade a Gerar</label>
                             <div class="relative flex items-center">
                                 <button type="button" onclick="changeQty('gen-qty', -1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
                                 <input type="number" id="gen-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
@@ -204,7 +215,7 @@
                     </div>
                 </div>
 
-                <div class="glass-card p-6 rounded-2xl lg:col-span-7 flex flex-col min-h-[300px]">
+                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col min-h-[300px]">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
                             <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
@@ -214,7 +225,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas aparecerão aqui...&#10;Exemplo: HG-MPO@90!&"></textarea>
+                        <textarea id="gen-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves geradas aparecerão aqui..."></textarea>
                     </div>
                 </div>
             </div>
@@ -224,12 +235,23 @@
         <div id="view-custom" class="hidden space-y-6 animate-[fadeIn_0.3s_ease]">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                <div class="glass-card p-6 rounded-2xl lg:col-span-5 flex flex-col h-full">
+                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col h-full">
                     <h2 class="text-white font-semibold mb-6 flex items-center gap-2 text-lg">
                         <i class="fa-solid fa-stopwatch text-kxAccent1"></i> Tempo Personalizado
                     </h2>
                     
                     <div class="space-y-6 flex-1">
+                        <!-- FORMATO DA KEY CUSTOM -->
+                        <div>
+                            <label class="block text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Formato da Key</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" onclick="selectFormat('custom', 'novo')" id="btn-fmt-custom-novo" class="fmt-custom-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all">Novo (Delta)</button>
+                                <button type="button" onclick="selectFormat('custom', 'tradicional')" id="btn-fmt-custom-tradicional" class="fmt-custom-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Tradicional</button>
+                                <button type="button" onclick="selectFormat('custom', 'zk')" id="btn-fmt-custom-zk" class="fmt-custom-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all">Estilo ZK</button>
+                            </div>
+                            <input type="hidden" id="custom-format" value="novo">
+                        </div>
+
                         <div class="grid grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider text-center">Dias</label>
@@ -246,7 +268,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade</label>
+                            <label class="block text-zinc-400 text-xs font-bold mb-2 uppercase tracking-wider">Quantidade a Gerar</label>
                             <div class="relative flex items-center">
                                 <button type="button" onclick="changeQty('custom-qty', -1)" class="absolute left-0 w-10 h-full flex items-center justify-center text-zinc-400 hover:text-white"><i class="fa-solid fa-minus text-xs"></i></button>
                                 <input type="number" id="custom-qty" min="1" max="100" value="1" class="input-kx w-full rounded-xl py-3 text-center text-white font-bold">
@@ -262,7 +284,7 @@
                     </div>
                 </div>
 
-                <div class="glass-card p-6 rounded-2xl lg:col-span-7 flex flex-col min-h-[300px]">
+                <div class="glass-card p-6 rounded-2xl lg:col-span-6 flex flex-col min-h-[300px]">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-white font-semibold flex items-center gap-2 text-lg">
                             <i class="fa-solid fa-terminal text-kxAccent1"></i> Output
@@ -272,7 +294,7 @@
                         </button>
                     </div>
                     <div class="relative flex-1 rounded-xl overflow-hidden border border-kxBorder bg-[#050505]">
-                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves personalizadas aparecerão aqui...&#10;Exemplo: HG-MPO@90!&"></textarea>
+                        <textarea id="custom-output" readonly class="w-full h-full bg-transparent text-kxAccent1 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed" placeholder="As chaves personalizadas aparecerão aqui..."></textarea>
                     </div>
                 </div>
             </div>
@@ -317,11 +339,12 @@
         let adminPass = "";
 
         // ==========================================
-        // SISTEMA GERADOR DO MODELO (EX: HG-MPO@90!&)
+        // SISTEMA GERADOR DOS DIFERENTES ESTILOS DE KEY
         // ==========================================
-        function generateFormattedKey() {
+        function generateKeyByFormat(format) {
             const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const numbers = "0123456789";
+            const alphaNum = letters + numbers;
             
             const randChars = (len, chars) => {
                 let result = '';
@@ -331,11 +354,36 @@
                 return result;
             };
 
-            const part1 = randChars(2, letters); // HG
-            const part2 = randChars(3, letters); // MPO
-            const part3 = randChars(2, numbers); // 90
+            if (format === 'zk') {
+                // Estilo ZK (Exemplo: ZK-A1B2-C3D4)
+                return `ZK-${randChars(4, alphaNum)}-${randChars(4, alphaNum)}`;
+            } 
+            else if (format === 'tradicional') {
+                // Estilo Tradicional (Exemplo: KX-8X9B2C1D)
+                return `KX-${randChars(8, alphaNum)}`;
+            } 
+            else {
+                // Novo Estilo Delta (Exemplo: HG-MPO@90!&) -> PADRÃO
+                const part1 = randChars(2, letters);
+                const part2 = randChars(3, letters);
+                const part3 = randChars(2, numbers);
+                return `${part1}-${part2}@${part3}!&`;
+            }
+        }
 
-            return `${part1}-${part2}@${part3}!&`;
+        // ==========================================
+        // LÓGICA DE INTERFACE DOS FORMATOS E DIAS
+        // ==========================================
+        function selectFormat(tabPrefix, format) {
+            document.getElementById(`${tabPrefix}-format`).value = format;
+            const buttons = document.querySelectorAll(`.fmt-${tabPrefix}-btn`);
+            buttons.forEach(btn => {
+                btn.className = `fmt-${tabPrefix}-btn py-2.5 rounded-xl border border-kxBorder bg-black/20 text-zinc-400 text-xs font-semibold hover:border-zinc-500 transition-all`;
+            });
+            const activeBtn = document.getElementById(`btn-fmt-${tabPrefix}-${format}`);
+            if (activeBtn) {
+                activeBtn.className = `fmt-${tabPrefix}-btn py-2.5 rounded-xl border border-kxAccent1 bg-kxAccent1/10 text-kxAccent1 text-xs font-semibold shadow-[0_0_15px_rgba(115,100,255,0.2)] transition-all`;
+            }
         }
 
         function selectDay(days) {
@@ -458,19 +506,21 @@
         }
 
         // ==========================================
-        // COMUNICAÇÃO COM O SERVIDOR (Geração Otimizada)
+        // COMUNICAÇÃO COM O SERVIDOR
         // ==========================================
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
             let btnId = '';
             let outId = '';
+            let formatId = '';
 
             if (type === 'rapido') {
                 totalDays = parseFloat(document.getElementById('gen-days').value) || 7;
                 qty = parseInt(document.getElementById('gen-qty').value) || 1;
                 btnId = 'btn-generate-rapido';
                 outId = 'gen-output';
+                formatId = 'gen-format';
             } else if (type === 'custom') {
                 const d = parseInt(document.getElementById('custom-dias').value) || 0;
                 const h = parseInt(document.getElementById('custom-horas').value) || 0;
@@ -480,6 +530,7 @@
                 qty = parseInt(document.getElementById('custom-qty').value) || 1;
                 btnId = 'btn-generate-custom';
                 outId = 'custom-output';
+                formatId = 'custom-format';
 
                 if (totalDays <= 0) {
                     showToast("O tempo total deve ser maior que zero!", "error");
@@ -487,6 +538,7 @@
                 }
             }
 
+            const format = document.getElementById(formatId).value;
             const btn = document.getElementById(btnId);
             const out = document.getElementById(outId);
 
@@ -494,16 +546,13 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // Gera as Keys aqui no Javascript para garantir o formato exigido
+            // Gera as Keys aqui no Javascript de acordo com o Formato escolhido
             const clientGeneratedKeys = [];
             for (let i = 0; i < qty; i++) {
-                clientGeneratedKeys.push(generateFormattedKey());
+                clientGeneratedKeys.push(generateKeyByFormat(format));
             }
 
-            /* OBSERVAÇÃO PARA O BACKEND:
-               O backend receberá esse array de "keys". Caso o seu backend gere as keys sozinho, 
-               ele precisa ser atualizado na sua API para aceitar e gravar estas "clientGeneratedKeys".
-            */
+            // Envia o array pro backend gravar e validar
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
@@ -515,10 +564,9 @@
             btn.disabled = false;
 
             if (data.success) {
-                // Previne falha visual caso o backend não devolva as keys (Usa as geradas localmente)
                 const finalKeys = (data.keys && data.keys.length > 0) ? data.keys : clientGeneratedKeys;
                 out.value = finalKeys.join('\n');
-                showToast(`${finalKeys.length} Key(s) gerada(s) com sucesso!`, "success");
+                showToast(`${finalKeys.length} Key(s) ${format} gerada(s) com sucesso!`, "success");
             } else {
                 showToast(data.error || "Erro ao gerar keys.", "error");
             }
@@ -590,7 +638,6 @@
 
                 const dataExpiracao = k.expiresAt ? k.expiresAt : '<span class="text-zinc-600">Não ativada</span>';
                 const userText = (k.userId && k.userId !== "-") ? k.userId : '<span class="text-zinc-600">Nenhum</span>';
-                
                 const tempoBonito = formatFractionalDays(k.days);
 
                 tr.innerHTML = `
@@ -617,7 +664,7 @@
         }
 
         async function deleteKey(keyStr) {
-            if (!confirm(`TEM A CERTEZA?\\n\\nA key ${keyStr} será permanentemente apagada da base de dados.`)) return;
+            if (!confirm(`TEM A CERTEZA?\n\nA key ${keyStr} será permanentemente apagada da base de dados.`)) return;
 
             const data = await apiRequest('/delete', { password: adminPass, key: keyStr });
             if (data.success) {
