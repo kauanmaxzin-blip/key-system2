@@ -508,7 +508,7 @@
             input.value = val;
         }
 
-        // --- GERAR AS KEYS COM O TRUQUE DE MÁSCARA ---
+        // --- GERAR AS KEYS COM A KEY REAL SALVA NO BANCO ---
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
@@ -545,29 +545,33 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // Envia o pedido normal SEM ALTERAR o backend (O backend vai devolver o formato padrão dele)
+            // Define qual será o prefixo e sufixo real da key escolhida
+            let keyPrefix = "";
+            let keySuffix = "";
+            
+            if (formatChoice === 'zkxit') {
+                keyPrefix = "ZkXit|3.0 - ";
+            } else if (formatChoice === 'delta') {
+                keyPrefix = "HG-";
+                keySuffix = "-&";
+            }
+
+            // Envia o pedido informando o prefixo e sufixo para o backend salvar a key REAL no banco
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
-                quantity: qty
+                quantity: qty,
+                prefix: keyPrefix,
+                suffix: keySuffix
             });
 
             btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
 
             if (data.success) {
-                let finalKeys = data.keys;
-
-                // TRUQUE NO HTML: Disfarça a key do backend de acordo com o botão escolhido
-                if (formatChoice === 'zkxit') {
-                    finalKeys = data.keys.map(k => "ZkXit|3.0 - " + k);
-                } 
-                else if (formatChoice === 'delta') {
-                    // Novo Painel: Junta "HG-" na frente e "-&" atrás da key do backend
-                    finalKeys = data.keys.map(k => "HG-" + k + "-&");
-                }
-
-                out.value = finalKeys.join('\n');
+                // Como o backend agora salva a key completa (com prefixo/sufixo), 
+                // apenas exibimos na tela extamente o que o banco de dados nos devolveu.
+                out.value = data.keys.join('\n');
                 showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
                 showToast(data.error || "Erro ao gerar keys.", "error");
@@ -667,11 +671,13 @@
         }
 
         async function deleteKey(keyStr) {
+            // Encode the key string to handle special characters correctly if they exist
+            const safeKey = keyStr.replace(/'/g, "\\'");
             if (!confirm(`TEM A CERTEZA?\n\nA key ${keyStr} será permanentemente apagada do banco de dados.`)) return;
 
             const data = await apiRequest('/delete', { password: adminPass, key: keyStr });
             if (data.success) {
-                showToast(`Key ${keyStr} apagada com sucesso.`, "success");
+                showToast(`Key apagada com sucesso.`, "success");
                 loadKeys();
             } else {
                 showToast(data.error || "Erro ao apagar key.", "error");
