@@ -1,14 +1,17 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║   KAUAN XIT · KEY SERVER  v5.2  (Upstash Redis)             ║
-// ║   Banco persistente — keys nunca somem!                     ║
+// ║   KAUAN XIT · KEY SERVER  v5.3  (Upstash Redis)             ║
+// ║   Agora salvando o Nome/Formato Real da Key no Banco!       ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 const express = require("express");
 const https   = require("https");
 const fs      = require("fs");
 const path    = require("path");
+const cors    = require("cors"); 
 const app     = express();
+
 app.use(express.json());
+app.use(cors());
 
 const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD  || "kauanxit_admin_2026";
 const UPSTASH_URL     = process.env.UPSTASH_URL     || "";
@@ -18,6 +21,8 @@ const PORT            = process.env.PORT || 3000;
 // ── UPSTASH: executar comando Redis via REST ──────────────────
 function redis(command) {
     return new Promise((resolve) => {
+        if (!UPSTASH_URL || !UPSTASH_TOKEN) return resolve(null);
+        
         const body = JSON.stringify(command);
         const url  = new URL(UPSTASH_URL);
         const options = {
@@ -44,19 +49,16 @@ function redis(command) {
     });
 }
 
-// Lê uma key do banco
 async function getKey(key) {
     const val = await redis(["GET", "kx:" + key]);
     if (!val) return null;
     try { return JSON.parse(val); } catch { return null; }
 }
 
-// Salva uma key no banco
 async function setKey(key, data) {
     await redis(["SET", "kx:" + key, JSON.stringify(data)]);
 }
 
-// Lista todas as keys
 async function getAllKeys() {
     const keys = await redis(["KEYS", "kx:*"]);
     if (!keys || keys.length === 0) return {};
@@ -68,12 +70,10 @@ async function getAllKeys() {
     return result;
 }
 
-// Deleta uma key
 async function deleteKey(key) {
     await redis(["DEL", "kx:" + key]);
 }
 
-// ── GERADOR DE CÓDIGO  (ex: 7B4-8P9-8HP) ─────────────────────
 function gerarCodigo() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let cod = "";
@@ -89,10 +89,9 @@ function gerarCodigo() {
 //  ROTAS
 // ═══════════════════════════════════════════════════════════════
 
-// ── [ADMIN] Gerar key
 app.post("/generate", async (req, res) => {
-    // Recebe o prefixo e sufixo enviados pelo painel (Frontend)
-    const { password, days = 7, quantity = 1, prefix = "", suffix = "" } = req.body;
+    // Agora o painel envia o "formatName" para sabermos o nome real da key
+    const { password, days = 7, quantity = 1, prefix = "", suffix = "", formatName = "Tradicional" } = req.body;
     
     if (password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha de admin incorreta!" });
@@ -106,14 +105,12 @@ app.post("/generate", async (req, res) => {
         let existe;
         do {
             const codigoBase = gerarCodigo();
-            // Junta o Prefixo + Código Aleatório + Sufixo
             codigoFinal = prefix + codigoBase + suffix;
-            
             existe = await getKey(codigoFinal);
             tentativas++;
         } while (existe && tentativas < 50);
 
-        // Salva a key COMPLETA no banco de dados
+        // Salva a key com o nome do formato no banco de dados
         await setKey(codigoFinal, {
             createdAt:    Date.now(),
             durationMs,
@@ -121,29 +118,25 @@ app.post("/generate", async (req, res) => {
             activatedAt:  null,
             expiresAt:    null,
             lockedUserId: null,
+            formatName:   formatName // <--- Salva o NOME REAL DA KEY AQUI
         });
         geradas.push(codigoFinal);
     }
 
-    console.log(`[GENERATE] ${qtd} key(s):`, geradas);
+    console.log(`[GENERATE] ${qtd} key(s) do tipo ${formatName} geradas.`);
     res.json({ success: true, keys: geradas });
 });
 
-// ── [SCRIPT] Validar key
-// Body: { "key": "ZkXit|3.0 - 7B4-8P9-8HP", "userId": "123456789" }
 app.post("/validate", async (req, res) => {
-    // Removemos o toUpperCase para não quebrar a formatação ZkXit (letras minúsculas)
     const keyInput = (req.body.key || "").trim();
     const userId   = String(req.body.userId || "").trim();
 
     if (!keyInput) return res.json({ valid: false, message: "Key nao enviada!" });
     if (!userId)   return res.json({ valid: false, message: "UserId nao enviado!" });
 
-    // Tenta achar a key exatamente como foi digitada
     let entry = await getKey(keyInput);
     let keyUsed = keyInput;
 
-    // Se não achar, tenta tudo maiúsculo para manter compatibilidade com as keys antigas
     if (!entry) {
         entry = await getKey(keyInput.toUpperCase());
         keyUsed = keyInput.toUpperCase();
@@ -154,22 +147,17 @@ app.post("/validate", async (req, res) => {
 
     const now = Date.now();
 
-    // 1a vez: ativa, inicia timer e trava na conta
     if (!entry.activatedAt) {
         entry.activatedAt  = now;
         entry.expiresAt    = now + entry.durationMs;
         entry.lockedUserId = userId;
         await setKey(keyUsed, entry);
-        console.log(`[ACTIVATE] Key ${keyUsed} por userId=${userId}. Expira em ${entry.days}d.`);
     }
 
-    // Bloqueia outra conta
     if (entry.lockedUserId && entry.lockedUserId !== userId) {
-        console.log(`[BLOCKED] Key ${keyUsed} pertence a ${entry.lockedUserId}, tentada por ${userId}`);
         return res.json({ valid: false, message: "Essa Key ja pertence a outra conta!" });
     }
 
-    // Verifica expiracao
     if (!entry.expiresAt || now > entry.expiresAt)
         return res.json({ valid: false, message: "Key expirada!" });
 
@@ -177,18 +165,15 @@ app.post("/validate", async (req, res) => {
     const remainingDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
     const remainingHrs  = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-    console.log(`[VALID] Key ${keyUsed} ok | userId=${userId} | Restam ${remainingDays}d ${remainingHrs}h`);
-
     res.json({
         valid: true,
-        message: "Key valida! Bem-vindo(a).",
+        message: "Key valida!",
         expiresAt: entry.expiresAt,
         remainingDays,
         remainingHrs,
     });
 });
 
-// ── [ADMIN] Listar keys
 app.post("/list", async (req, res) => {
     if (req.body.password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha incorreta!" });
@@ -196,24 +181,22 @@ app.post("/list", async (req, res) => {
     const db  = await getAllKeys();
     const now = Date.now();
     const lista = Object.entries(db).map(([codigo, e]) => ({
-        key:      codigo,
-        status:   !e.activatedAt ? "aguardando" : (now > e.expiresAt ? "expirada" : "ativa"),
-        days:     e.days,
-        userId:   e.lockedUserId || "-",
-        expiresAt: e.expiresAt ? new Date(e.expiresAt).toLocaleString("pt-BR") : null,
+        key:        codigo,
+        status:     !e.activatedAt ? "aguardando" : (now > e.expiresAt ? "expirada" : "ativa"),
+        days:       e.days,
+        userId:     e.lockedUserId || "-",
+        expiresAt:  e.expiresAt ? new Date(e.expiresAt).toLocaleString("pt-BR") : null,
+        formatName: e.formatName || "Tradicional" // <--- Devolve para a tabela o nome salvo
     }));
     res.json({ success: true, total: lista.length, keys: lista });
 });
 
-// ── [ADMIN] Deletar key
 app.post("/delete", async (req, res) => {
     const { password, key } = req.body;
     if (password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha incorreta!" });
 
     const kInput = (key || "").trim();
-    
-    // Tenta deletar com o formato exato, ou formato maiúsculo
     let entry = await getKey(kInput);
     let keyToDelete = kInput;
 
@@ -225,22 +208,11 @@ app.post("/delete", async (req, res) => {
     if (!entry) return res.json({ success: false, error: "Key nao encontrada!" });
     
     await deleteKey(keyToDelete);
-    res.json({ success: true, message: `Key ${keyToDelete} deletada.` });
+    res.json({ success: true, message: `Key deletada.` });
 });
 
-// ── Painel Admin Web (PWA)
-app.get("/admin", (req, res) => {
-    const htmlPath = path.join(__dirname, "admin-app.html");
-    if (fs.existsSync(htmlPath)) {
-        res.sendFile(htmlPath);
-    } else {
-        res.send("admin-app.html nao encontrado na pasta do servidor.");
-    }
-});
-
-app.get("/", (req, res) => res.send("Kauan Xit Key Server v5.2 online! Acesse /admin para o painel."));
+app.get("/", (req, res) => res.send("Kauan Xit Key Server online!"));
 
 app.listen(PORT, () => {
-    console.log(`\nKauan Xit Key Server v5.2 rodando na porta ${PORT}`);
-    console.log(`Upstash URL: ${UPSTASH_URL}\n`);
+    console.log(`Kauan Xit Key Server rodando na porta ${PORT}`);
 });
