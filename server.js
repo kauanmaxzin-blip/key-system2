@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║   KAUAN XIT · KEY SERVER  v5.4  (Upstash Redis)             ║
-// ║   Sistema Antifalhas de Validação (Ignora espaços/letras)   ║
+// ║   KAUAN XIT · KEY SERVER  v5.5  (Upstash Redis)             ║
+// ║   + Sistema de Pausar/Congelar Tempo das Keys               ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 const express = require("express");
@@ -116,7 +116,9 @@ app.post("/generate", async (req, res) => {
             activatedAt:  null,
             expiresAt:    null,
             lockedUserId: null,
-            formatName:   formatName 
+            formatName:   formatName,
+            isPaused:     false, // NOVO: Controle de pausa
+            remainingMs:  0      // NOVO: Guarda o tempo congelado
         });
         geradas.push(codigoFinal);
     }
@@ -132,44 +134,31 @@ app.post("/validate", async (req, res) => {
     if (!keyInput) return res.json({ valid: false, message: "Key nao enviada!" });
     if (!userId)   return res.json({ valid: false, message: "UserId nao enviado!" });
 
-    // 1ª Tentativa: Busca exata
     let entry = await getKey(keyInput);
     let keyUsed = keyInput;
 
-    // 2ª Tentativa: Busca forçando maiúsculo
     if (!entry) {
         entry = await getKey(keyInput.toUpperCase());
         if (entry) keyUsed = keyInput.toUpperCase();
     }
 
-    // 3ª Tentativa: BUSCA ROBUSTA ANTIFALHAS
-    // Isso resolve se o script remover os espaços, deixar minúsculo, 
-    // ou não enviar o prefixo completo (ex: enviar só 9F3-PL4-FHL).
     if (!entry) {
         const db = await getAllKeys();
-        // Remove todos os espaços e deixa maiúsculo para comparar
         const cleanInput = keyInput.toUpperCase().replace(/\s+/g, ''); 
-
         for (const [dbKey, dbEntry] of Object.entries(db)) {
             const cleanDbKey = dbKey.toUpperCase().replace(/\s+/g, '');
-            
-            const isExactMatch = (cleanDbKey === cleanInput);
-            // Se o DB tem ZKXIT|3.0-ABC-DEF, e o script enviou só ABC-DEF
-            const dbContainsInput = (cleanInput.length >= 8 && cleanDbKey.includes(cleanInput));
-            // Se o DB tem só ABC-DEF, e o script enviou ZKXIT|3.0-ABC-DEF (caso de keys velhas)
-            const inputContainsDb = (cleanDbKey.length >= 8 && cleanInput.includes(cleanDbKey));
-
-            if (isExactMatch || dbContainsInput || inputContainsDb) {
-                entry = dbEntry;
-                keyUsed = dbKey; // Usa a key original salva no banco
-                break;
+            if (cleanDbKey === cleanInput || (cleanInput.length >= 8 && cleanDbKey.includes(cleanInput)) || (cleanDbKey.length >= 8 && cleanInput.includes(cleanDbKey))) {
+                entry = dbEntry; keyUsed = dbKey; break;
             }
         }
     }
 
-    // Se depois das 3 tentativas não achou nada, aí sim é falsa.
-    if (!entry)
-        return res.json({ valid: false, message: "Key falsa ou nao gerada pelo servidor!" });
+    if (!entry) return res.json({ valid: false, message: "Key falsa ou nao gerada pelo servidor!" });
+
+    // NOVO: Verifica se a Key foi PAUSADA/DESATIVADA pelo dono do painel
+    if (entry.isPaused) {
+        return res.json({ valid: false, message: "Essa Key foi suspensa temporariamente pelo Administrador!" });
+    }
 
     const now = Date.now();
 
@@ -201,26 +190,78 @@ app.post("/validate", async (req, res) => {
 });
 
 app.post("/list", async (req, res) => {
-    if (req.body.password !== ADMIN_PASSWORD)
-        return res.json({ success: false, error: "Senha incorreta!" });
+    if (req.body.password !== ADMIN_PASSWORD) return res.json({ success: false, error: "Senha incorreta!" });
 
     const db  = await getAllKeys();
     const now = Date.now();
-    const lista = Object.entries(db).map(([codigo, e]) => ({
-        key:        codigo,
-        status:     !e.activatedAt ? "aguardando" : (now > e.expiresAt ? "expirada" : "ativa"),
-        days:       e.days,
-        userId:     e.lockedUserId || "-",
-        expiresAt:  e.expiresAt ? new Date(e.expiresAt).toLocaleString("pt-BR") : null,
-        formatName: e.formatName || "Tradicional"
-    }));
+    const lista = Object.entries(db).map(([codigo, e]) => {
+        let isExpired = e.expiresAt ? now > e.expiresAt : false;
+        let currentStatus = !e.activatedAt ? "aguardando" : (e.isPaused ? "pausada" : (isExpired ? "expirada" : "ativa"));
+        
+        // Calcula quanto tempo falta, mesmo se estiver congelado
+        let remainingFractionalDays = e.days;
+        if (e.isPaused) {
+            remainingFractionalDays = e.remainingMs / (1000 * 60 * 60 * 24);
+        } else if (e.activatedAt && !isExpired && e.expiresAt) {
+            remainingFractionalDays = (e.expiresAt - now) / (1000 * 60 * 60 * 24);
+        } else if (isExpired) {
+            remainingFractionalDays = 0;
+        }
+
+        return {
+            key:        codigo,
+            status:     currentStatus,
+            days:       remainingFractionalDays,
+            userId:     e.lockedUserId || "-",
+            expiresAt:  e.isPaused ? "Congelada" : (e.expiresAt ? new Date(e.expiresAt).toLocaleString("pt-BR") : null),
+            formatName: e.formatName || "Tradicional"
+        };
+    });
     res.json({ success: true, total: lista.length, keys: lista });
+});
+
+// ── [ADMIN] Pausar ou Retomar Key
+app.post("/toggle-pause", async (req, res) => {
+    const { password, key } = req.body;
+    if (password !== ADMIN_PASSWORD) return res.json({ success: false, error: "Senha incorreta!" });
+
+    const kInput = (key || "").trim();
+    let entry = await getKey(kInput);
+    let keyToUpdate = kInput;
+
+    if (!entry) {
+        entry = await getKey(kInput.toUpperCase());
+        if (entry) keyToUpdate = kInput.toUpperCase();
+    }
+
+    if (!entry) return res.json({ success: false, error: "Key nao encontrada!" });
+
+    if (!entry.activatedAt) return res.json({ success: false, error: "A key ainda não foi ativada. O tempo dela nem começou!" });
+    if (!entry.isPaused && Date.now() > entry.expiresAt) return res.json({ success: false, error: "Não é possível pausar uma key expirada." });
+
+    if (entry.isPaused) {
+        // RETOMAR (Descongelar)
+        entry.isPaused = false;
+        entry.expiresAt = Date.now() + entry.remainingMs; // Devolve o tempo que restava
+        entry.remainingMs = 0;
+    } else {
+        // PAUSAR (Congelar)
+        entry.isPaused = true;
+        entry.remainingMs = entry.expiresAt - Date.now(); // Guarda o que restava
+        entry.expiresAt = null; // Zera a expiração pra não acabar enquanto pausado
+    }
+
+    await setKey(keyToUpdate, entry);
+    res.json({ 
+        success: true, 
+        isPaused: entry.isPaused, 
+        message: entry.isPaused ? "Tempo da Key CONGELADO e acesso suspenso." : "Tempo da Key RETOMADO e acesso liberado." 
+    });
 });
 
 app.post("/delete", async (req, res) => {
     const { password, key } = req.body;
-    if (password !== ADMIN_PASSWORD)
-        return res.json({ success: false, error: "Senha incorreta!" });
+    if (password !== ADMIN_PASSWORD) return res.json({ success: false, error: "Senha incorreta!" });
 
     const kInput = (key || "").trim();
     let entry = await getKey(kInput);
@@ -232,7 +273,6 @@ app.post("/delete", async (req, res) => {
     }
 
     if (!entry) return res.json({ success: false, error: "Key nao encontrada!" });
-    
     await deleteKey(keyToDelete);
     res.json({ success: true, message: `Key deletada.` });
 });
