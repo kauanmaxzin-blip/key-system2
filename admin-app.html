@@ -332,7 +332,7 @@
                     <table class="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
                             <tr class="bg-black/40 border-b border-kxBorder text-zinc-400 text-xs uppercase tracking-wider">
-                                <th class="px-6 py-4 font-semibold">Chave (Key)</th>
+                                <th class="px-6 py-4 font-semibold">Chave (Key) e Nome</th>
                                 <th class="px-6 py-4 font-semibold">Estado</th>
                                 <th class="px-6 py-4 font-semibold">Duração</th>
                                 <th class="px-6 py-4 font-semibold">HWID / User</th>
@@ -351,7 +351,6 @@
     <script>
         let adminPass = "";
 
-        // --- SISTEMA DE SELEÇÃO DO FORMATO NA INTERFACE ---
         function setKeyFormat(format) {
             document.getElementById('global-key-format').value = format;
             
@@ -366,7 +365,6 @@
             btnsZkXit.forEach(btn => btn.className = `fmt-zkxit-btn ${format === 'zkxit' ? activeClass : inactiveClass}`);
             btnsDelta.forEach(btn => btn.className = `fmt-delta-btn ${format === 'delta' ? activeClass : inactiveClass}`);
 
-            // Atualiza visualmente o texto de exemplo (Placeholder) no Output
             const outGen = document.getElementById('gen-output');
             const outCustom = document.getElementById('custom-output');
             
@@ -383,7 +381,6 @@
             if (outCustom) outCustom.placeholder = exemploText;
         }
 
-        // --- FUNÇÃO DA BARRA DE DIAS RÁPIDA ---
         function selectDay(days) {
             document.getElementById('gen-days').value = days;
             const buttons = document.querySelectorAll('.day-btn');
@@ -396,7 +393,6 @@
             }
         }
 
-        // --- SISTEMA DE TOAST ---
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const toastIcon = document.getElementById('toast-icon');
@@ -424,7 +420,6 @@
             }, 3500);
         }
 
-        // --- API FETCHER ---
         async function apiRequest(endpoint, body) {
             try {
                 const res = await fetch(endpoint, {
@@ -438,7 +433,6 @@
             }
         }
 
-        // --- LOGIN ---
         async function doLogin() {
             const passInput = document.getElementById('password').value;
             const btn = document.getElementById('btn-login');
@@ -479,7 +473,6 @@
             showToast("Sessão terminada.", "info");
         }
 
-        // --- TABS ---
         function switchTab(tab) {
             const tabs = ['gerar', 'custom', 'gerir'];
             
@@ -498,7 +491,6 @@
             }
         }
 
-        // --- QTY CONTROLS ---
         function changeQty(inputId, amount) {
             const input = document.getElementById(inputId);
             let val = parseInt(input.value) || 1;
@@ -508,7 +500,6 @@
             input.value = val;
         }
 
-        // --- GERAR AS KEYS COM A KEY REAL SALVA NO BANCO ---
         async function generateKeys(type) {
             let totalDays = 0;
             let qty = 1;
@@ -545,32 +536,33 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A Processar...';
             btn.disabled = true;
 
-            // Define qual será o prefixo e sufixo real da key escolhida
             let keyPrefix = "";
             let keySuffix = "";
+            let formatNameLabel = "Tradicional";
             
             if (formatChoice === 'zkxit') {
                 keyPrefix = "ZkXit|3.0 - ";
+                formatNameLabel = "Zk Xit | 3.0";
             } else if (formatChoice === 'delta') {
                 keyPrefix = "HG-";
                 keySuffix = "-&";
+                formatNameLabel = "Novo Painel";
             }
 
-            // Envia o pedido informando o prefixo e sufixo para o backend salvar a key REAL no banco
+            // Envia agora também o formatName
             const data = await apiRequest('/generate', { 
                 password: adminPass, 
                 days: totalDays, 
                 quantity: qty,
                 prefix: keyPrefix,
-                suffix: keySuffix
+                suffix: keySuffix,
+                formatName: formatNameLabel 
             });
 
             btn.innerHTML = textoOriginalBtn;
             btn.disabled = false;
 
             if (data.success) {
-                // Como o backend agora salva a key completa (com prefixo/sufixo), 
-                // apenas exibimos na tela extamente o que o banco de dados nos devolveu.
                 out.value = data.keys.join('\n');
                 showToast(`${data.keys.length} Key(s) gerada(s) com sucesso!`, "success");
             } else {
@@ -603,7 +595,6 @@
             return res.join(' ');
         }
 
-        // --- GERIR KEYS ---
         async function loadKeys() {
             const tbody = document.getElementById('keys-tbody');
             const btn = document.getElementById('btn-refresh');
@@ -647,11 +638,17 @@
                 const userText = (k.userId && k.userId !== "-") ? k.userId : '<span class="text-zinc-600">Nenhum</span>';
                 const tempoBonito = formatFractionalDays(k.days);
 
+                // AQUI FOI ADICIONADO A TAG DO NOME REAL DA KEY!
                 tr.innerHTML = `
-                    <td class="px-6 py-4 font-mono text-zinc-300 font-medium tracking-wide">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-key text-zinc-600 text-xs"></i>
-                            ${k.key}
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col gap-1.5">
+                            <div class="font-mono text-zinc-300 font-medium tracking-wide flex items-center gap-2">
+                                <i class="fa-solid fa-key text-zinc-600 text-xs"></i>
+                                ${k.key}
+                            </div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-kxAccent1 bg-kxAccent1/10 px-2 py-0.5 rounded w-max border border-kxAccent1/20 shadow-sm">
+                                ${k.formatName || 'Tradicional'}
+                            </div>
                         </div>
                     </td>
                     <td class="px-6 py-4">${statusBadge}</td>
@@ -671,7 +668,6 @@
         }
 
         async function deleteKey(keyStr) {
-            // Encode the key string to handle special characters correctly if they exist
             const safeKey = keyStr.replace(/'/g, "\\'");
             if (!confirm(`TEM A CERTEZA?\n\nA key ${keyStr} será permanentemente apagada do banco de dados.`)) return;
 
