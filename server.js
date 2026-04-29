@@ -1,6 +1,6 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║   KAUAN XIT · KEY SERVER  v5.3  (Upstash Redis)             ║
-// ║   Agora salvando o Nome/Formato Real da Key no Banco!       ║
+// ║   KAUAN XIT · KEY SERVER  v5.4  (Upstash Redis)             ║
+// ║   Sistema Antifalhas de Validação (Ignora espaços/letras)   ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 const express = require("express");
@@ -90,7 +90,6 @@ function gerarCodigo() {
 // ═══════════════════════════════════════════════════════════════
 
 app.post("/generate", async (req, res) => {
-    // Agora o painel envia o "formatName" para sabermos o nome real da key
     const { password, days = 7, quantity = 1, prefix = "", suffix = "", formatName = "Tradicional" } = req.body;
     
     if (password !== ADMIN_PASSWORD)
@@ -110,7 +109,6 @@ app.post("/generate", async (req, res) => {
             tentativas++;
         } while (existe && tentativas < 50);
 
-        // Salva a key com o nome do formato no banco de dados
         await setKey(codigoFinal, {
             createdAt:    Date.now(),
             durationMs,
@@ -118,7 +116,7 @@ app.post("/generate", async (req, res) => {
             activatedAt:  null,
             expiresAt:    null,
             lockedUserId: null,
-            formatName:   formatName // <--- Salva o NOME REAL DA KEY AQUI
+            formatName:   formatName 
         });
         geradas.push(codigoFinal);
     }
@@ -134,14 +132,42 @@ app.post("/validate", async (req, res) => {
     if (!keyInput) return res.json({ valid: false, message: "Key nao enviada!" });
     if (!userId)   return res.json({ valid: false, message: "UserId nao enviado!" });
 
+    // 1ª Tentativa: Busca exata
     let entry = await getKey(keyInput);
     let keyUsed = keyInput;
 
+    // 2ª Tentativa: Busca forçando maiúsculo
     if (!entry) {
         entry = await getKey(keyInput.toUpperCase());
-        keyUsed = keyInput.toUpperCase();
+        if (entry) keyUsed = keyInput.toUpperCase();
     }
 
+    // 3ª Tentativa: BUSCA ROBUSTA ANTIFALHAS
+    // Isso resolve se o script remover os espaços, deixar minúsculo, 
+    // ou não enviar o prefixo completo (ex: enviar só 9F3-PL4-FHL).
+    if (!entry) {
+        const db = await getAllKeys();
+        // Remove todos os espaços e deixa maiúsculo para comparar
+        const cleanInput = keyInput.toUpperCase().replace(/\s+/g, ''); 
+
+        for (const [dbKey, dbEntry] of Object.entries(db)) {
+            const cleanDbKey = dbKey.toUpperCase().replace(/\s+/g, '');
+            
+            const isExactMatch = (cleanDbKey === cleanInput);
+            // Se o DB tem ZKXIT|3.0-ABC-DEF, e o script enviou só ABC-DEF
+            const dbContainsInput = (cleanInput.length >= 8 && cleanDbKey.includes(cleanInput));
+            // Se o DB tem só ABC-DEF, e o script enviou ZKXIT|3.0-ABC-DEF (caso de keys velhas)
+            const inputContainsDb = (cleanDbKey.length >= 8 && cleanInput.includes(cleanDbKey));
+
+            if (isExactMatch || dbContainsInput || inputContainsDb) {
+                entry = dbEntry;
+                keyUsed = dbKey; // Usa a key original salva no banco
+                break;
+            }
+        }
+    }
+
+    // Se depois das 3 tentativas não achou nada, aí sim é falsa.
     if (!entry)
         return res.json({ valid: false, message: "Key falsa ou nao gerada pelo servidor!" });
 
@@ -186,7 +212,7 @@ app.post("/list", async (req, res) => {
         days:       e.days,
         userId:     e.lockedUserId || "-",
         expiresAt:  e.expiresAt ? new Date(e.expiresAt).toLocaleString("pt-BR") : null,
-        formatName: e.formatName || "Tradicional" // <--- Devolve para a tabela o nome salvo
+        formatName: e.formatName || "Tradicional"
     }));
     res.json({ success: true, total: lista.length, keys: lista });
 });
@@ -202,7 +228,7 @@ app.post("/delete", async (req, res) => {
 
     if (!entry) {
         entry = await getKey(kInput.toUpperCase());
-        keyToDelete = kInput.toUpperCase();
+        if (entry) keyToDelete = kInput.toUpperCase();
     }
 
     if (!entry) return res.json({ success: false, error: "Key nao encontrada!" });
