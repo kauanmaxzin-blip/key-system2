@@ -1,23 +1,15 @@
 // ╔══════════════════════════════════════════════════════════════╗
-// ║   KAUAN XIT · KEY SERVER  v5.1  (Upstash Redis)             ║
-// ║   Atualizado com suporte a Gerador Personalizado            ║
+// ║   KAUAN XIT · KEY SERVER  v5.2  (Upstash Redis)             ║
+// ║   Banco persistente — keys nunca somem!                     ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 const express = require("express");
 const https   = require("https");
 const fs      = require("fs");
 const path    = require("path");
-
-// CORS é importante para permitir que o gerador (frontend) faça requisições para este servidor
-const cors    = require("cors"); 
-
 const app     = express();
-
-// Middlewares
 app.use(express.json());
-app.use(cors()); // Libera o acesso para o seu frontend fazer requisições POST
 
-// Variáveis de Ambiente
 const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD  || "kauanxit_admin_2026";
 const UPSTASH_URL     = process.env.UPSTASH_URL     || "";
 const UPSTASH_TOKEN   = process.env.UPSTASH_TOKEN   || "";
@@ -26,12 +18,6 @@ const PORT            = process.env.PORT || 3000;
 // ── UPSTASH: executar comando Redis via REST ──────────────────
 function redis(command) {
     return new Promise((resolve) => {
-        // Se as credenciais não estiverem configuradas, evita crash
-        if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-            console.error("ERRO: UPSTASH_URL ou UPSTASH_TOKEN não configurados!");
-            return resolve(null);
-        }
-
         const body = JSON.stringify(command);
         const url  = new URL(UPSTASH_URL);
         const options = {
@@ -87,10 +73,8 @@ async function deleteKey(key) {
     await redis(["DEL", "kx:" + key]);
 }
 
-// ── GERADORES DE CÓDIGO ──────────────────────────────────────
-
-// 1. Gerador Clássico (Formato: 7B4-8P9-8HP)
-function gerarCodigoPadrao() {
+// ── GERADOR DE CÓDIGO  (ex: 7B4-8P9-8HP) ─────────────────────
+function gerarCodigo() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let cod = "";
     for (let s = 0; s < 3; s++) {
@@ -101,45 +85,15 @@ function gerarCodigoPadrao() {
     return cod;
 }
 
-// 2. Gerador Dinâmico (Recebe as opções do Frontend)
-function gerarCodigoPersonalizado(tamanho, maiusculas, minusculas, numeros, simbolos) {
-    let charset = '';
-    if (maiusculas) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    if (minusculas) charset += 'abcdefghijklmnopqrstuvwxyz';
-    if (numeros) charset += '0123456789';
-    if (simbolos) charset += '!@#$%^&*()_+~`|}{[]:;?><,./-=';
-
-    // Fallback caso venha vazio por algum erro
-    if (charset === '') charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-    let result = '';
-    for (let i = 0; i < tamanho; i++) {
-        result += charset[Math.floor(Math.random() * charset.length)];
-    }
-    return result;
-}
-
 // ═══════════════════════════════════════════════════════════════
 //  ROTAS
 // ═══════════════════════════════════════════════════════════════
 
 // ── [ADMIN] Gerar key
-// Agora aceita parâmetros do Gerador Dinâmico
 app.post("/generate", async (req, res) => {
-    const { 
-        password, 
-        days = 7, 
-        quantity = 1,
-        
-        // Parâmetros do novo gerador dinâmico
-        useCustomGenerator = false,
-        length = 16,
-        uppercase = true,
-        lowercase = true,
-        numbers = true,
-        symbols = false
-    } = req.body;
-
+    // Recebe o prefixo e sufixo enviados pelo painel (Frontend)
+    const { password, days = 7, quantity = 1, prefix = "", suffix = "" } = req.body;
+    
     if (password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha de admin incorreta!" });
 
@@ -148,21 +102,19 @@ app.post("/generate", async (req, res) => {
     const durationMs = (parseFloat(days) || 7) * 24 * 60 * 60 * 1000;
 
     for (let i = 0; i < qtd; i++) {
-        let codigo, tentativas = 0;
+        let codigoFinal, tentativas = 0;
         let existe;
         do {
-            // Escolhe qual gerador usar com base na requisição
-            if (useCustomGenerator) {
-                codigo = gerarCodigoPersonalizado(length, uppercase, lowercase, numbers, symbols);
-            } else {
-                codigo = gerarCodigoPadrao();
-            }
-
-            existe = await getKey(codigo);
+            const codigoBase = gerarCodigo();
+            // Junta o Prefixo + Código Aleatório + Sufixo
+            codigoFinal = prefix + codigoBase + suffix;
+            
+            existe = await getKey(codigoFinal);
             tentativas++;
         } while (existe && tentativas < 50);
 
-        await setKey(codigo, {
+        // Salva a key COMPLETA no banco de dados
+        await setKey(codigoFinal, {
             createdAt:    Date.now(),
             durationMs,
             days:         parseFloat(days) || 7,
@@ -170,27 +122,31 @@ app.post("/generate", async (req, res) => {
             expiresAt:    null,
             lockedUserId: null,
         });
-        geradas.push(codigo);
+        geradas.push(codigoFinal);
     }
 
-    console.log(`[GENERATE] ${qtd} key(s) geradas.`);
+    console.log(`[GENERATE] ${qtd} key(s):`, geradas);
     res.json({ success: true, keys: geradas });
 });
 
 // ── [SCRIPT] Validar key
-// Body: { "key": "7B4-8P9-8HP", "userId": "123456789" }
+// Body: { "key": "ZkXit|3.0 - 7B4-8P9-8HP", "userId": "123456789" }
 app.post("/validate", async (req, res) => {
-    // Ignora case e espaços para evitar erros bobos do usuário
-    const key    = (req.body.key    || "").trim(); // Removemos o toUpperCase() para não quebrar as chaves personalizadas com letras minúsculas!
-    const userId = String(req.body.userId || "").trim();
+    // Removemos o toUpperCase para não quebrar a formatação ZkXit (letras minúsculas)
+    const keyInput = (req.body.key || "").trim();
+    const userId   = String(req.body.userId || "").trim();
 
-    if (!key)    return res.json({ valid: false, message: "Key nao enviada!" });
-    if (!userId) return res.json({ valid: false, message: "UserId nao enviado!" });
+    if (!keyInput) return res.json({ valid: false, message: "Key nao enviada!" });
+    if (!userId)   return res.json({ valid: false, message: "UserId nao enviado!" });
 
-    // Tenta buscar a key exata. Se não achar, tenta buscar com toUpperCase() para chaves antigas
-    let entry = await getKey(key);
+    // Tenta achar a key exatamente como foi digitada
+    let entry = await getKey(keyInput);
+    let keyUsed = keyInput;
+
+    // Se não achar, tenta tudo maiúsculo para manter compatibilidade com as keys antigas
     if (!entry) {
-        entry = await getKey(key.toUpperCase());
+        entry = await getKey(keyInput.toUpperCase());
+        keyUsed = keyInput.toUpperCase();
     }
 
     if (!entry)
@@ -203,14 +159,13 @@ app.post("/validate", async (req, res) => {
         entry.activatedAt  = now;
         entry.expiresAt    = now + entry.durationMs;
         entry.lockedUserId = userId;
-        // Salva com a chave original (mantém o case)
-        await setKey(key, entry);
-        console.log(`[ACTIVATE] Key ${key} por userId=${userId}. Expira em ${entry.days}d.`);
+        await setKey(keyUsed, entry);
+        console.log(`[ACTIVATE] Key ${keyUsed} por userId=${userId}. Expira em ${entry.days}d.`);
     }
 
     // Bloqueia outra conta
     if (entry.lockedUserId && entry.lockedUserId !== userId) {
-        console.log(`[BLOCKED] Key ${key} pertence a ${entry.lockedUserId}, tentada por ${userId}`);
+        console.log(`[BLOCKED] Key ${keyUsed} pertence a ${entry.lockedUserId}, tentada por ${userId}`);
         return res.json({ valid: false, message: "Essa Key ja pertence a outra conta!" });
     }
 
@@ -222,7 +177,7 @@ app.post("/validate", async (req, res) => {
     const remainingDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
     const remainingHrs  = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-    console.log(`[VALID] Key ${key} ok | userId=${userId} | Restam ${remainingDays}d ${remainingHrs}h`);
+    console.log(`[VALID] Key ${keyUsed} ok | userId=${userId} | Restam ${remainingDays}d ${remainingHrs}h`);
 
     res.json({
         valid: true,
@@ -256,20 +211,36 @@ app.post("/delete", async (req, res) => {
     if (password !== ADMIN_PASSWORD)
         return res.json({ success: false, error: "Senha incorreta!" });
 
-    const k = (key || "").trim();
-    let entry = await getKey(k);
-    if (!entry) {
-        entry = await getKey(k.toUpperCase());
-    }
+    const kInput = (key || "").trim();
     
+    // Tenta deletar com o formato exato, ou formato maiúsculo
+    let entry = await getKey(kInput);
+    let keyToDelete = kInput;
+
+    if (!entry) {
+        entry = await getKey(kInput.toUpperCase());
+        keyToDelete = kInput.toUpperCase();
+    }
+
     if (!entry) return res.json({ success: false, error: "Key nao encontrada!" });
-    await deleteKey(k);
-    res.json({ success: true, message: `Key ${k} deletada.` });
+    
+    await deleteKey(keyToDelete);
+    res.json({ success: true, message: `Key ${keyToDelete} deletada.` });
 });
 
-app.get("/", (req, res) => res.send("Kauan Xit Key Server v5.1 online! (Com Gerador Personalizado)"));
+// ── Painel Admin Web (PWA)
+app.get("/admin", (req, res) => {
+    const htmlPath = path.join(__dirname, "admin-app.html");
+    if (fs.existsSync(htmlPath)) {
+        res.sendFile(htmlPath);
+    } else {
+        res.send("admin-app.html nao encontrado na pasta do servidor.");
+    }
+});
+
+app.get("/", (req, res) => res.send("Kauan Xit Key Server v5.2 online! Acesse /admin para o painel."));
 
 app.listen(PORT, () => {
-    console.log(`\nKauan Xit Key Server v5.1 rodando na porta ${PORT}`);
+    console.log(`\nKauan Xit Key Server v5.2 rodando na porta ${PORT}`);
     console.log(`Upstash URL: ${UPSTASH_URL}\n`);
 });
